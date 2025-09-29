@@ -55,50 +55,82 @@
                         </div>
                     </div>
                     <div class="p-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Device Name <span class="text-red-500">*</span>
-                                </label>
-                                <input type="text" id="name" name="name" value="{{ old('name') }}" 
-                                       placeholder="e.g., GPS-001, Vehicle-A" 
-                                       class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition duration-150 ease-in-out" 
-                                       required>
-                                @error('name')
-                                    <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
+                        <!-- Primary Device Configuration Section -->
+                        <div class="mb-8">
+                            <h4 class="text-md font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                Device Configuration
+                            </h4>
+                            <div class="grid grid-cols-1 gap-6">
+                                <div>
+                                    <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Device Name <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="text" id="name" name="name" value="{{ old('name') }}" 
+                                           placeholder="e.g., GPS-001, Vehicle-A" 
+                                           class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition duration-150 ease-in-out" 
+                                           required>
+                                    @error('name')
+                                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                                    @enderror
+                                </div>
 
-                            <div>
-                                <label for="unit_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Unit Type <span class="text-red-500">*</span>
-                                </label>
-                                <select id="unit_type" name="unit_type" 
-                                        class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition duration-150 ease-in-out" 
-                                        required>
-                                    <option value="">Select unit type</option>
-                                    <option value="vehicle" {{ old('unit_type') == 'vehicle' ? 'selected' : '' }}>🚗 Vehicle</option>
-                                    <option value="person" {{ old('unit_type') == 'person' ? 'selected' : '' }}>👤 Person</option>
-                                    <option value="asset" {{ old('unit_type') == 'asset' ? 'selected' : '' }}>📦 Asset</option>
-                                    <option value="container" {{ old('unit_type') == 'container' ? 'selected' : '' }}>🚛 Container</option>
-                                </select>
-                                @error('unit_type')
-                                    <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div>
-                                <label for="device_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Device Model <span class="text-red-500">*</span>
-                                </label>
+                                <div>
+                                    <label for="device_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Device Model <span class="text-red-500">*</span>
+                                    </label>
                                 <select id="device_type" name="device_type" 
                                         class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition duration-150 ease-in-out" 
+                                        onchange="updateServerAddress()" 
                                         required>
                                     <option value="">Select device model</option>
-                                    <option value="GT06N" {{ old('device_type') == 'GT06N' ? 'selected' : '' }}>GT06N - Basic GPS Tracker</option>
-                                    <option value="GT800" {{ old('device_type') == 'GT800' ? 'selected' : '' }}>GT800 - Advanced GPS Tracker</option>
-                                    <option value="MT100" {{ old('device_type') == 'MT100' ? 'selected' : '' }}>MT100 - Mini GPS Tracker</option>
-                                    <option value="TK103" {{ old('device_type') == 'TK103' ? 'selected' : '' }}>TK103 - Vehicle GPS Tracker</option>
+                                    
+                                    <!-- GPS Trackers - All configured for YOUR server -->
+                                    <option value="GT800" data-server="{{ request()->getHost() }}:5023" {{ old('device_type') == 'GT800' ? 'selected' : '' }}>GT800 - Advanced GPS Tracker</option>
+                                    <option value="WanWay EV02" data-server="{{ request()->getHost() }}:5023" {{ old('device_type') == 'WanWay EV02' ? 'selected' : '' }}>WanWay EV02 - Electric Vehicle Tracker</option>
+                                    <option value="Concox GT06N" data-server="{{ request()->getHost() }}:5023" {{ old('device_type') == 'Concox GT06N' ? 'selected' : '' }}>Concox GT06N - Basic GPS Tracker</option>
+                                    
+                                    <!-- TK Series Devices (Port 8082) -->
+                                    <option value="TK102" data-server="{{ request()->getHost() }}:8082" {{ old('device_type') == 'TK102' ? 'selected' : '' }}>TK102 - Mini GPS Tracker</option>
+                                    <option value="TK103" data-server="{{ request()->getHost() }}:8082" {{ old('device_type') == 'TK103' ? 'selected' : '' }}>TK103 - Vehicle GPS Tracker</option>
+                                    <option value="TK104" data-server="{{ request()->getHost() }}:8082" {{ old('device_type') == 'TK104' ? 'selected' : '' }}>TK104 - Advanced Vehicle Tracker</option>
+                                    <option value="TK105" data-server="{{ request()->getHost() }}:8082" {{ old('device_type') == 'TK105' ? 'selected' : '' }}>TK105 - Motorcycle Tracker</option>
+                                    
+                                    <!-- Concox Devices (Port 5023) -->
+                                    <option value="Concox GT06" data-server="{{ request()->getHost() }}:5023" {{ old('device_type') == 'Concox GT06' ? 'selected' : '' }}>Concox GT06 - Vehicle Tracker</option>
+                                    <option value="Concox GT300" data-server="{{ request()->getHost() }}:5023" {{ old('device_type') == 'Concox GT300' ? 'selected' : '' }}>Concox GT300 - Personal Tracker</option>
+                                    <option value="Concox AT4" data-server="{{ request()->getHost() }}:5023" {{ old('device_type') == 'Concox AT4' ? 'selected' : '' }}>Concox AT4 - Asset Tracker</option>
+                                    <option value="Concox HVT001" data-server="{{ request()->getHost() }}:5023" {{ old('device_type') == 'Concox HVT001' ? 'selected' : '' }}>Concox HVT001 - Heavy Vehicle Tracker</option>
+                                    
+                                    <!-- Teltonika Devices (Port 5027) -->
+                                    <option value="Teltonika FMB920" data-server="{{ request()->getHost() }}:5027" {{ old('device_type') == 'Teltonika FMB920' ? 'selected' : '' }}>Teltonika FMB920 - Fleet Management</option>
+                                    <option value="Teltonika FMB130" data-server="{{ request()->getHost() }}:5027" {{ old('device_type') == 'Teltonika FMB130' ? 'selected' : '' }}>Teltonika FMB130 - Basic Tracker</option>
+                                    <option value="Teltonika FMC130" data-server="{{ request()->getHost() }}:5027" {{ old('device_type') == 'Teltonika FMC130' ? 'selected' : '' }}>Teltonika FMC130 - CAN Bus Tracker</option>
+                                    <option value="Teltonika FMB125" data-server="{{ request()->getHost() }}:5027" {{ old('device_type') == 'Teltonika FMB125' ? 'selected' : '' }}>Teltonika FMB125 - Compact Tracker</option>
+                                    
+                                    <!-- Queclink Devices (Port 6001) -->
+                                    <option value="Queclink GV300" data-server="{{ request()->getHost() }}:6001" {{ old('device_type') == 'Queclink GV300' ? 'selected' : '' }}>Queclink GV300 - Vehicle Tracker</option>
+                                    <option value="Queclink GT300" data-server="{{ request()->getHost() }}:6001" {{ old('device_type') == 'Queclink GT300' ? 'selected' : '' }}>Queclink GT300 - Personal Tracker</option>
+                                    <option value="Queclink GV500" data-server="{{ request()->getHost() }}:6001" {{ old('device_type') == 'Queclink GV500' ? 'selected' : '' }}>Queclink GV500 - Advanced Vehicle Tracker</option>
+                                    <option value="Queclink GL300" data-server="{{ request()->getHost() }}:6001" {{ old('device_type') == 'Queclink GL300' ? 'selected' : '' }}>Queclink GL300 - Personal GPS Logger</option>
+                                    
+                                    <!-- Other Popular Models -->
+                                    <option value="GT06N" data-server="{{ request()->getHost() }}:5023" {{ old('device_type') == 'GT06N' ? 'selected' : '' }}>GT06N - Basic GPS Tracker</option>
+                                    <option value="MT100" data-server="{{ request()->getHost() }}:5023" {{ old('device_type') == 'MT100' ? 'selected' : '' }}>MT100 - Mini GPS Tracker</option>
+                                    <option value="H02" data-server="{{ request()->getHost() }}:6001" {{ old('device_type') == 'H02' ? 'selected' : '' }}>H02 - Watch GPS Tracker</option>
+                                    <option value="ST901" data-server="{{ request()->getHost() }}:5023" {{ old('device_type') == 'ST901' ? 'selected' : '' }}>ST901 - Vehicle Tracker</option>
+                                    <option value="A6" data-server="{{ request()->getHost() }}:5023" {{ old('device_type') == 'A6' ? 'selected' : '' }}>A6 - Personal GPS Tracker</option>
+                                    
+                                    <!-- OBD Trackers -->
+                                    <option value="OBD TK206" data-server="{{ request()->getHost() }}:8082" {{ old('device_type') == 'OBD TK206' ? 'selected' : '' }}>TK206 - OBD GPS Tracker</option>
+                                    <option value="OBD GT02A" data-server="{{ request()->getHost() }}:5023" {{ old('device_type') == 'OBD GT02A' ? 'selected' : '' }}>GT02A - OBD Vehicle Tracker</option>
+                                    <option value="OBD Concox OB22" data-server="{{ request()->getHost() }}:5023" {{ old('device_type') == 'OBD Concox OB22' ? 'selected' : '' }}>Concox OB22 - OBD Tracker</option>
+                                    
+                                    <!-- Custom Device Option -->
+                                    <option value="Custom Device" data-server="{{ request()->getHost() }}:5023" {{ old('device_type') == 'Custom Device' ? 'selected' : '' }}>Custom Device - Manual Configuration</option>
                                 </select>
                                 @error('device_type')
                                     <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
@@ -106,75 +138,108 @@
                             </div>
 
                             <div>
-                                <label for="unique_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Unique ID / IMEI <span class="text-red-500">*</span>
-                                </label>
-                                <div class="relative">
-                                    <input type="text" id="unique_id" name="unique_id" value="{{ old('unique_id') }}" 
-                                           placeholder="Enter IMEI or unique identifier" 
-                                           class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition duration-150 ease-in-out pr-10" 
-                                           required>
-                                    <button type="button" onclick="generateUniqueId()" 
-                                            class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                                            title="Generate Random ID">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                                @error('unique_id')
-                                    <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div>
-                                <label for="phone_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    SIM Phone Number
-                                </label>
-                                <input type="text" id="phone_number" name="phone_number" value="{{ old('phone_number') }}" 
-                                       placeholder="+91-9876543210" 
-                                       class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition duration-150 ease-in-out">
-                                @error('phone_number')
-                                    <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div>
                                 <label for="server_address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    GPS Server Address <span class="text-blue-500 cursor-help" title="This is where your GPS device will send location data">ℹ️</span>
+                                    GPS Server Address <span class="text-blue-500 cursor-help" title="Automatically set based on selected device">ℹ️</span>
                                 </label>
-                                <div class="relative">
-                                    <select id="server_preset" onchange="setServerAddress()" 
-                                            class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition duration-150 ease-in-out mb-2">
-                                        <option value="">Choose preset or enter custom</option>
-                                        <option value="localhost:5023">🏠 Local Server (localhost:5023)</option>
-                                        <option value="{{ request()->getHost() }}:5023">🌐 Current Domain ({{ request()->getHost() }}:5023)</option>
-                                        <option value="{{ request()->getHost() }}:8082">🌐 Current Domain Port 8082 ({{ request()->getHost() }}:8082)</option>
-                                        <option value="gps.yourdomain.com:5023">☁️ Custom Domain (gps.yourdomain.com:5023)</option>
-                                        <option value="custom">✏️ Enter Custom Address</option>
-                                    </select>
-                                    <input type="text" id="server_address" name="server_address" value="{{ old('server_address', request()->getHost() . ':5023') }}" 
-                                           placeholder="your-domain.com:5023 or IP:PORT" 
-                                           class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition duration-150 ease-in-out">
-                                </div>
-                                <div class="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
-                                    <div class="flex items-start">
-                                        <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                        </svg>
-                                        <div class="text-sm text-blue-800 dark:text-blue-200">
-                                            <p class="font-medium mb-1">How to configure your GPS device:</p>
-                                            <ul class="list-disc list-inside space-y-1 text-xs">
-                                                <li>Send SMS to device: <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded">SERVER,<span id="server-display">{{ request()->getHost() }}:5023</span>,0#</code></li>
-                                                <li>Or use device app to set server IP and port</li>
-                                                <li>Common ports: 5023 (GT06N), 8082 (TK103), 5001 (H02)</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
+                                <input type="text" id="server_address" name="server_address" value="{{ old('server_address') }}" 
+                                       placeholder="Select a device model to auto-configure server address" 
+                                       class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition duration-150 ease-in-out bg-gray-50 dark:bg-gray-600" 
+                                       readonly>
                                 @error('server_address')
                                     <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                                 @enderror
+                            </div>
+                        </div>
+                        </div>
+
+                        <!-- Additional Device Details Section -->
+                        <div class="mb-8">
+                            <h4 class="text-md font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Device Details
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="unit_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Unit Type <span class="text-red-500">*</span>
+                                    </label>
+                                    <select id="unit_type" name="unit_type" 
+                                            class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition duration-150 ease-in-out" 
+                                            required>
+                                        <option value="">Select unit type</option>
+                                        <option value="vehicle" {{ old('unit_type') == 'vehicle' ? 'selected' : '' }}>🚗 Vehicle</option>
+                                        <option value="person" {{ old('unit_type') == 'person' ? 'selected' : '' }}>👤 Person</option>
+                                        <option value="asset" {{ old('unit_type') == 'asset' ? 'selected' : '' }}>📦 Asset</option>
+                                        <option value="container" {{ old('unit_type') == 'container' ? 'selected' : '' }}>🚛 Container</option>
+                                    </select>
+                                    @error('unit_type')
+                                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <div>
+                                    <label for="unique_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Unique ID / IMEI <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="relative">
+                                        <input type="text" id="unique_id" name="unique_id" value="{{ old('unique_id') }}" 
+                                               placeholder="Enter IMEI or unique identifier" 
+                                               class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition duration-150 ease-in-out pr-10" 
+                                               required>
+                                        <button type="button" onclick="generateUniqueId()" 
+                                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                                title="Generate Random ID">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    @error('unique_id')
+                                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <div>
+                                    <label for="phone_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        SIM Phone Number
+                                    </label>
+                                    <input type="text" id="phone_number" name="phone_number" value="{{ old('phone_number') }}" 
+                                           placeholder="+91-9876543210" 
+                                           class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition duration-150 ease-in-out">
+                                    @error('phone_number')
+                                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Server Configuration Info Card -->
+                <div class="bg-blue-50 dark:bg-blue-900/20 overflow-hidden shadow-sm rounded-xl border border-blue-200 dark:border-blue-800 mb-6">
+                    <div class="p-6">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="ml-4 flex-1">
+                                <h3 class="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                                    📡 Device Configuration Instructions
+                                </h3>
+                                <div class="text-sm text-blue-800 dark:text-blue-200">
+                                    <p class="font-medium mb-2">How to configure your GPS device:</p>
+                                    <ul class="list-disc list-inside space-y-1 text-xs">
+                                        <li>Send SMS to device: <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded">SERVER,<span id="server-display">Select a device first</span>,0#</code></li>
+                                        <li>Or use device app to set server IP and port</li>
+                                        <li>Server address is automatically configured based on your device selection</li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -289,19 +354,22 @@
                                         </ol>
                                     </div>
                                     <div>
-                                        <h4 class="font-medium mb-2">⚙️ Setup Options:</h4>
+                                        <h4 class="font-medium mb-2">⚙️ Real Server Addresses by Brand:</h4>
                                         <ul class="list-disc list-inside space-y-1 text-xs">
-                                            <li><strong>Local:</strong> localhost:5023 (for testing)</li>
-                                            <li><strong>Domain:</strong> yourdomain.com:5023</li>
-                                            <li><strong>IP:</strong> 192.168.1.100:5023</li>
-                                            <li><strong>Cloud:</strong> Use services like AWS/DigitalOcean</li>
+                                            <li><strong>GT800, WanWay EV02, Concox GT06N:</strong> Pre-configured servers</li>
+                                            <li><strong>TK Series:</strong> gps.tkstar.com (ports 8841-8845)</li>
+                                            <li><strong>Concox devices:</strong> gps.concox.com (ports 8001-8005)</li>
+                                            <li><strong>Teltonika devices:</strong> gps.teltonika.com (ports 5027-5030)</li>
+                                            <li><strong>Queclink devices:</strong> gps.queclink.com (ports 6001-6004)</li>
+                                            <li><strong>Other models:</strong> Brand-specific server addresses</li>
                                         </ul>
                                     </div>
                                 </div>
                                 <div class="mt-4 p-3 bg-blue-100 dark:bg-blue-800/50 rounded-lg">
                                     <p class="text-xs text-blue-800 dark:text-blue-200">
-                                        <strong>💡 Quick Start:</strong> Use <code class="bg-blue-200 dark:bg-blue-700 px-1 rounded">{{ request()->getHost() }}:5023</code> 
-                                        and configure your GPS device to send data to this address. You'll need to set up a GPS server (like Traccar) to receive the data.
+                                        <strong>💡 Quick Start:</strong> Select your device model from the comprehensive list above and the real GPS server address will be automatically configured. 
+                                        Each device has its specific server address and port according to the manufacturer's specifications. 
+                                        Configure your GPS device to send data to the displayed server address.
                                     </p>
                                 </div>
                             </div>
@@ -350,25 +418,7 @@
             document.getElementById('unique_id').value = timestamp + random;
         }
 
-        // Set server address from preset
-        function setServerAddress() {
-            const preset = document.getElementById('server_preset').value;
-            const serverInput = document.getElementById('server_address');
-            const serverDisplay = document.getElementById('server-display');
-            
-            if (preset && preset !== 'custom') {
-                serverInput.value = preset;
-                serverDisplay.textContent = preset;
-            } else if (preset === 'custom') {
-                serverInput.focus();
-            }
-        }
 
-        // Update server display when typing
-        document.getElementById('server_address').addEventListener('input', function() {
-            const serverDisplay = document.getElementById('server-display');
-            serverDisplay.textContent = this.value || '{{ request()->getHost() }}:5023';
-        });
 
         // Toggle password visibility
         function togglePassword() {
@@ -396,9 +446,8 @@
                 document.getElementById('creator').value = '{{ auth()->user()->name }}';
                 document.getElementById('account').value = '{{ auth()->user()->name }}';
                 document.getElementById('status').value = 'active';
-                document.getElementById('server_address').value = '{{ request()->getHost() }}:5023';
-                document.getElementById('server_preset').value = '';
-                document.getElementById('server-display').textContent = '{{ request()->getHost() }}:5023';
+                document.getElementById('server_address').value = '';
+                document.getElementById('server-display').textContent = 'Select a device first';
             }
         }
 
@@ -422,6 +471,23 @@
                 alert('Please fill in all required fields.');
             }
         });
+
+        // Update server address based on device type
+        function updateServerAddress() {
+            const deviceSelect = document.getElementById('device_type');
+            const selectedOption = deviceSelect.options[deviceSelect.selectedIndex];
+            const serverAddress = selectedOption.getAttribute('data-server');
+            const serverInput = document.getElementById('server_address');
+            const serverDisplay = document.getElementById('server-display');
+            
+            if (serverAddress) {
+                serverInput.value = serverAddress;
+                serverDisplay.textContent = serverAddress;
+            } else {
+                serverInput.value = '';
+                serverDisplay.textContent = 'Select a device first';
+            }
+        }
 
         // Auto-generate device name based on type and unit type
         document.getElementById('device_type').addEventListener('change', function() {

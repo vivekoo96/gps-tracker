@@ -61,7 +61,28 @@ class Device extends Model
         return $query->where('is_moving', true)->where('speed', '>', 0);
     }
 
+    // Relationships
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function gpsData()
+    {
+        return $this->hasMany(GpsData::class);
+    }
+
+    public function latestGpsData()
+    {
+        return $this->hasOne(GpsData::class)->latestOfMany('recorded_at');
+    }
+
     // Accessors
+    public function getLastLocationAttribute()
+    {
+        return $this->latestGpsData;
+    }
+
     public function getIsOnlineAttribute()
     {
         return $this->status === 'active' && 
@@ -71,7 +92,11 @@ class Device extends Model
 
     public function getStatusDisplayAttribute()
     {
-        return $this->is_online ? 'online' : 'offline';
+        return match($this->status) {
+            'active' => '🟢 Online',
+            'inactive' => '🔴 Offline',
+            default => '⚪ Unknown'
+        };
     }
 }
 
