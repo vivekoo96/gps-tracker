@@ -36,5 +36,11 @@ class DatabaseSeeder extends Seeder
             ]
         );
         $demo->assignRole($userRole);
+
+        // Seed devices and GPS data
+        $this->call([
+            DeviceSeeder::class,
+            GpsDataSeeder::class,
+        ]);
     }
 }

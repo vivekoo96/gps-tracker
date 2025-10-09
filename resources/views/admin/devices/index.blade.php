@@ -143,7 +143,11 @@
                                                 </div>
                                                 <div class="ml-4">
                                                     <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                                        {{ $device->name ?? 'Device-' . $device->id }}
+                                                        <a href="{{ route('tracking.vehicle-details', $device->id) }}" 
+                                                           class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer"
+                                                           title="View tracking details for {{ $device->name ?? 'Device-' . $device->id }}">
+                                                            {{ $device->name ?? 'Device-' . $device->id }}
+                                                        </a>
                                                     </div>
                                                     <div class="text-sm text-gray-500 dark:text-gray-400">
                                                         ID: {{ $device->id }}
@@ -177,6 +181,13 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div class="flex items-center space-x-2">
+                                                <a href="{{ route('tracking.vehicle-details', $device->id) }}" 
+                                                   class="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300 transition-colors"
+                                                   title="View Tracking Details">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                    </svg>
+                                                </a>
                                                 <a href="{{ route('admin.devices.edit', $device) }}" 
                                                    class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
                                                    title="Edit Device">

@@ -35,14 +35,12 @@ class GpsServerCommand extends Command
             });
         });
 
-        $server->on('error', function (Exception $e) {
+        $server->on('error', function (\Throwable $e) {
             $this->error('Server error: ' . $e->getMessage());
         });
 
-        // Keep the server running
-        while (true) {
-            sleep(1);
-        }
+        // Keep the server running with ReactPHP event loop
+        \React\EventLoop\Loop::run();
     }
 
     private function processGpsData($rawData, ConnectionInterface $connection, $port)
@@ -233,13 +231,114 @@ class GpsServerCommand extends Command
         }
     }
 
-    // Helper methods for data extraction
-    private function extractDeviceId($hex) { /* Implementation */ }
-    private function extractLatitude($hex) { /* Implementation */ }
-    private function extractLongitude($hex) { /* Implementation */ }
-    private function extractSpeed($hex) { /* Implementation */ }
-    private function extractDirection($hex) { /* Implementation */ }
-    private function extractTeltonikaIMEI($hex) { /* Implementation */ }
-    private function extractTeltonikaLat($hex) { /* Implementation */ }
-    private function extractTeltonikaLng($hex) { /* Implementation */ }
+    // Helper methods for GT06N data extraction
+    private function extractDeviceId($hex)
+    {
+        // GT06N IMEI is typically in BCD format starting at byte 4
+        // Extract 8 bytes (16 hex chars) for IMEI
+        if (strlen($hex) < 24) return 'unknown';
+        
+        $imeiHex = substr($hex, 8, 16);
+        // Convert BCD to decimal IMEI
+        $imei = '';
+        for ($i = 0; $i < strlen($imeiHex); $i += 2) {
+            $imei .= substr($imeiHex, $i, 2);
+        }
+        return ltrim($imei, '0') ?: 'unknown';
+    }
+
+    private function extractLatitude($hex)
+    {
+        // GT06N location packet: latitude starts around byte 11 (after header + time)
+        // Typical position in location packet (0x22)
+        if (strlen($hex) < 60) return 0.0;
+        
+        // Extract 4 bytes for latitude (32-bit value)
+        $latHex = substr($hex, 22, 8);
+        $latInt = hexdec($latHex);
+        
+        // GT06N format: latitude = value / 1800000.0
+        $latitude = $latInt / 1800000.0;
+        
+        // Check hemisphere bit and adjust if needed
+        return round($latitude, 6);
+    }
+
+    private function extractLongitude($hex)
+    {
+        // Longitude follows latitude
+        if (strlen($hex) < 70) return 0.0;
+        
+        // Extract 4 bytes for longitude (32-bit value)
+        $lngHex = substr($hex, 30, 8);
+        $lngInt = hexdec($lngHex);
+        
+        // GT06N format: longitude = value / 1800000.0
+        $longitude = $lngInt / 1800000.0;
+        
+        return round($longitude, 6);
+    }
+
+    private function extractSpeed($hex)
+    {
+        // Speed is typically 1 byte
+        if (strlen($hex) < 40) return 0;
+        
+        $speedHex = substr($hex, 38, 2);
+        return hexdec($speedHex);
+    }
+
+    private function extractDirection($hex)
+    {
+        // Direction/course is typically 2 bytes
+        if (strlen($hex) < 44) return 0;
+        
+        $dirHex = substr($hex, 40, 4);
+        return hexdec($dirHex) & 0x03FF; // Mask to get direction value (0-360)
+    }
+
+    // Helper methods for Teltonika data extraction
+    private function extractTeltonikaIMEI($hex)
+    {
+        // Teltonika IMEI is sent in initial packet
+        // Simplified extraction - needs full protocol implementation
+        if (strlen($hex) < 30) return 'teltonika_device';
+        
+        // IMEI is 15 digits, often sent as ASCII or BCD
+        $imeiHex = substr($hex, 8, 30);
+        return 'teltonika_' . substr($imeiHex, 0, 15);
+    }
+
+    private function extractTeltonikaLat($hex)
+    {
+        // Teltonika uses 4-byte signed integer for coordinates
+        // Value = degrees * 10000000
+        if (strlen($hex) < 100) return 0.0;
+        
+        $latHex = substr($hex, 60, 8);
+        $latInt = hexdec($latHex);
+        
+        // Convert to signed integer if needed
+        if ($latInt > 0x7FFFFFFF) {
+            $latInt = $latInt - 0x100000000;
+        }
+        
+        return round($latInt / 10000000.0, 6);
+    }
+
+    private function extractTeltonikaLng($hex)
+    {
+        // Longitude follows latitude in Teltonika protocol
+        if (strlen($hex) < 108) return 0.0;
+        
+        $lngHex = substr($hex, 68, 8);
+        $lngInt = hexdec($lngHex);
+        
+        // Convert to signed integer if needed
+        if ($lngInt > 0x7FFFFFFF) {
+            $lngInt = $lngInt - 0x100000000;
+        }
+        
+        return round($lngInt / 10000000.0, 6);
+    }
 }

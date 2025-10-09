@@ -344,7 +344,11 @@
                     // Create popup content
                     const popupContent = `
                         <div class="p-2">
-                            <h4 class="font-semibold text-gray-900">${device.name || 'Device #' + device.id}</h4>
+                            <h4 class="font-semibold text-gray-900">
+                                <a href="/tracking/vehicle/${device.id}" class="text-indigo-600 hover:text-indigo-800 underline">
+                                    ${device.name || 'Device #' + device.id}
+                                </a>
+                            </h4>
                             <p class="text-sm text-gray-600">ID: ${device.unique_id || 'N/A'}</p>
                             <p class="text-sm text-gray-600">Speed: ${device.speed || 0} km/h</p>
                             <p class="text-sm text-gray-600">Status: ${device.is_moving ? 'Moving' : 'Stationary'}</p>
@@ -352,6 +356,11 @@
                                 `<p class="text-xs text-gray-500">Last update: ${new Date(device.last_location_update).toLocaleString()}</p>` : 
                                 ''
                             }
+                            <div class="mt-2">
+                                <a href="/tracking/vehicle/${device.id}" class="inline-flex items-center px-2 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700">
+                                    📊 View Details
+                                </a>
+                            </div>
                         </div>
                     `;
                     
@@ -553,11 +562,20 @@
             
             const popupContent = `
                 <div class="p-2">
-                    <h4 class="font-semibold text-gray-900">${device.name || 'Device #' + device.id}</h4>
+                    <h4 class="font-semibold text-gray-900">
+                        <a href="/tracking/vehicle/${device.id}" class="text-indigo-600 hover:text-indigo-800 underline">
+                            ${device.name || 'Device #' + device.id}
+                        </a>
+                    </h4>
                     <p class="text-sm text-gray-600">ID: ${device.unique_id || 'N/A'}</p>
                     <p class="text-sm text-gray-600">Speed: ${device.speed || 0} km/h</p>
                     <p class="text-sm text-gray-600">Status: ${device.is_moving ? 'Moving' : 'Stationary'}</p>
                     <p class="text-xs text-gray-500">Last update: ${new Date(device.last_location_update).toLocaleString()}</p>
+                    <div class="mt-2">
+                        <a href="/tracking/vehicle/${device.id}" class="inline-flex items-center px-2 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700">
+                            📊 View Details
+                        </a>
+                    </div>
                 </div>
             `;
             

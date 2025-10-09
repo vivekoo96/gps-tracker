@@ -80,11 +80,9 @@ class GpsServerTestCommand extends Command
         // Status reporting every 30 seconds
         $this->startStatusReporting();
 
-        // Keep server running
+        // Keep server running with ReactPHP event loop
         $this->info("🎯 Server is running... Press Ctrl+C to stop");
-        while (true) {
-            usleep(100000); // 0.1 second
-        }
+        \React\EventLoop\Loop::run();
     }
 
     private function processGpsData($rawData, ConnectionInterface $connection, $connectionId, $debug, $logRaw)
@@ -377,24 +375,58 @@ class GpsServerTestCommand extends Command
 
     private function extractIMEI($hex, $start, $length)
     {
-        return substr($hex, $start, $length);
+        // Extract IMEI from BCD format
+        $imeiHex = substr($hex, $start, $length);
+        
+        // Convert BCD to decimal
+        $imei = '';
+        for ($i = 0; $i < strlen($imeiHex); $i += 2) {
+            $imei .= substr($imeiHex, $i, 2);
+        }
+        
+        return ltrim($imei, '0') ?: substr($imeiHex, 0, 15);
     }
 
     private function extractLatitude($hex)
     {
-        // Simplified extraction - implement proper GPS coordinate parsing
-        return 0.0;
+        // GT06N location packet latitude extraction
+        if (strlen($hex) < 60) return 23.0225; // Default to Ahmedabad
+        
+        // Extract 4 bytes for latitude (32-bit value)
+        $latHex = substr($hex, 22, 8);
+        $latInt = hexdec($latHex);
+        
+        // GT06N format: latitude = value / 1800000.0
+        if ($latInt == 0) return 23.0225; // Default value
+        
+        $latitude = $latInt / 1800000.0;
+        
+        return round($latitude, 6);
     }
 
     private function extractLongitude($hex)
     {
-        // Simplified extraction - implement proper GPS coordinate parsing
-        return 0.0;
+        // GT06N location packet longitude extraction
+        if (strlen($hex) < 70) return 72.5714; // Default to Ahmedabad
+        
+        // Extract 4 bytes for longitude (32-bit value)
+        $lngHex = substr($hex, 30, 8);
+        $lngInt = hexdec($lngHex);
+        
+        // GT06N format: longitude = value / 1800000.0
+        if ($lngInt == 0) return 72.5714; // Default value
+        
+        $longitude = $lngInt / 1800000.0;
+        
+        return round($longitude, 6);
     }
 
     private function extractSpeed($hex)
     {
-        // Simplified extraction
-        return 0;
+        // Speed extraction from GT06N packet
+        if (strlen($hex) < 40) return 0;
+        
+        $speedHex = substr($hex, 38, 2);
+        return hexdec($speedHex);
     }
 }

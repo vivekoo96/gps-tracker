@@ -55,6 +55,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/tracking/live', [TrackingController::class, 'liveTracking'])->name('tracking.live');
     Route::get('/tracking/reports', [TrackingController::class, 'reports'])->name('tracking.reports');
     Route::get('/tracking/history', [TrackingController::class, 'history'])->name('tracking.history');
+    Route::get('/tracking/vehicle/{device}', [TrackingController::class, 'vehicleDetails'])->name('tracking.vehicle-details');
     
     // Device setup and testing
     Route::get('/device-setup', function () {
@@ -88,6 +89,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->as('admin.')->group(
     Route::get('/', [AdminController::class, 'index'])->name('dashboard');
 
     // Role management
+    Route::resource('roles', AdminRoleController::class);
 
     // Assign roles to users
     Route::get('users/roles', [UserRoleController::class, 'index'])->name('users.roles.index');
