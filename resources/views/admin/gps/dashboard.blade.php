@@ -133,15 +133,15 @@
                                 <div>
                                     <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $device->name }}</p>
                                     <p class="text-xs text-gray-500 dark:text-gray-400">{{ $device->device_type ?? 'Unknown' }}</p>
-                                    @if($device->latestGpsData)
+                                    @if($device->latestPosition)
                                         <p class="text-xs text-blue-600 dark:text-blue-400">
-                                            Last seen: {{ $device->latestGpsData->recorded_at->diffForHumans() }}
+                                            Last seen: {{ $device->latestPosition->fix_time->diffForHumans() }}
                                         </p>
                                     @endif
                                 </div>
                             </div>
                             <div class="flex items-center space-x-2">
-                                @if($device->latestGpsData)
+                                @if($device->latestPosition)
                                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                                         📍 Located
                                     </span>
@@ -207,7 +207,7 @@
                                 {{ $gps->speed }} km/h
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                {{ $gps->recorded_at->format('M j, Y H:i') }}
+                                {{ $gps->fix_time ? $gps->fix_time->format('M j, Y H:i') : 'N/A' }}
                             </td>
                         </tr>
                         @endforeach
@@ -246,7 +246,7 @@ gpsData.forEach(function(gps) {
             <div class="p-2">
                 <h4 class="font-bold">${gps.device.name}</h4>
                 <p><strong>Speed:</strong> ${gps.speed} km/h</p>
-                <p><strong>Time:</strong> ${new Date(gps.recorded_at).toLocaleString()}</p>
+                <p><strong>Time:</strong> ${new Date(gps.fix_time).toLocaleString()}</p>
                 <p><strong>Location:</strong> ${gps.latitude.toFixed(6)}, ${gps.longitude.toFixed(6)}</p>
             </div>
         `;

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Device;
-use App\Models\GpsData;
+use App\Models\Position;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -12,17 +12,17 @@ class GpsTrackingController extends Controller
 {
     public function dashboard()
     {
-        $devices = Device::with(['latestGpsData'])->get();
+        $devices = Device::with(['latestPosition'])->get();
         $totalDevices = $devices->count();
         $onlineDevices = $devices->where('status', 'active')->count();
         $offlineDevices = $totalDevices - $onlineDevices;
         
         // Get recent GPS data for map
-        $recentGpsData = GpsData::with('device')
+        $recentGpsData = Position::with('device')
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
-            ->where('recorded_at', '>=', now()->subHours(24))
-            ->latest('recorded_at')
+            ->where('fix_time', '>=', now()->subHours(24))
+            ->latest('fix_time')
             ->take(100)
             ->get();
 
@@ -37,14 +37,14 @@ class GpsTrackingController extends Controller
 
     public function deviceMap($deviceId)
     {
-        $device = Device::with(['latestGpsData'])->findOrFail($deviceId);
+        $device = Device::with(['latestPosition'])->findOrFail($deviceId);
         
         // Get device track for last 24 hours
-        $gpsTrack = GpsData::where('device_id', $deviceId)
+        $gpsTrack = Position::where('device_id', $deviceId)
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
-            ->where('recorded_at', '>=', now()->subHours(24))
-            ->orderBy('recorded_at', 'asc')
+            ->where('fix_time', '>=', now()->subHours(24))
+            ->orderBy('fix_time', 'asc')
             ->get();
 
         return view('admin.gps.device-map', compact('device', 'gpsTrack'));
@@ -57,14 +57,14 @@ class GpsTrackingController extends Controller
         $from = $request->get('from', now()->subDays(7)->format('Y-m-d'));
         $to = $request->get('to', now()->format('Y-m-d'));
         
-        $gpsHistory = GpsData::where('device_id', $deviceId)
+        $gpsHistory = Position::where('device_id', $deviceId)
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
-            ->whereBetween('recorded_at', [
+            ->whereBetween('fix_time', [
                 Carbon::parse($from)->startOfDay(),
                 Carbon::parse($to)->endOfDay()
             ])
-            ->orderBy('recorded_at', 'desc')
+            ->orderBy('fix_time', 'desc')
             ->paginate(50);
 
         return view('admin.gps.device-history', compact('device', 'gpsHistory', 'from', 'to'));
@@ -73,16 +73,16 @@ class GpsTrackingController extends Controller
     public function liveData($deviceId = null)
     {
         if ($deviceId) {
-            $latestData = GpsData::where('device_id', $deviceId)
+            $latestData = Position::where('device_id', $deviceId)
                 ->whereNotNull('latitude')
                 ->whereNotNull('longitude')
-                ->latest('recorded_at')
+                ->latest('fix_time')
                 ->first();
         } else {
-            $latestData = GpsData::with('device')
+            $latestData = Position::with('device')
                 ->whereNotNull('latitude')
                 ->whereNotNull('longitude')
-                ->latest('recorded_at')
+                ->latest('fix_time')
                 ->take(20)
                 ->get();
         }
@@ -104,18 +104,17 @@ class GpsTrackingController extends Controller
         $baseLongitude = 72.5714;
         
         for ($i = 0; $i < 10; $i++) {
-            GpsData::create([
+            Position::create([
                 'device_id' => $device->id,
                 'latitude' => $baseLatitude + (rand(-100, 100) / 10000),
                 'longitude' => $baseLongitude + (rand(-100, 100) / 10000),
                 'speed' => rand(0, 80),
-                'direction' => rand(0, 360),
+                'course' => rand(0, 360),
                 'altitude' => rand(50, 200),
                 'satellites' => rand(4, 12),
-                'battery_level' => rand(20, 100),
-                'signal_strength' => rand(1, 5),
-                'recorded_at' => now()->subMinutes(rand(1, 60)),
-                'raw_data' => 'test_data_' . $i
+                'attributes' => json_encode(['battery_level' => rand(20, 100), 'signal_strength' => rand(1, 5)]),
+                'fix_time' => now()->subMinutes(rand(1, 60)),
+                'raw' => 'test_data_' . $i
             ]);
         }
 

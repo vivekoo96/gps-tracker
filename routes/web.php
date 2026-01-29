@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Admin\UserRoleController;
 use App\Http\Controllers\Admin\DeviceController;
+use App\Http\Controllers\Admin\GeofenceController;
 use App\Http\Controllers\TrackingController;
 use Illuminate\Support\Facades\Route;
 
@@ -97,6 +98,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->as('admin.')->group(
 
     // Device management routes
     Route::resource('devices', DeviceController::class);
+    
+    // Geofence management routes
+    Route::resource('geofences', GeofenceController::class);
+    Route::get('geofences/{geofence}/events', [GeofenceController::class, 'events'])->name('geofences.events');
     
     // GPS Tracking routes
     Route::prefix('gps')->name('gps.')->group(function () {

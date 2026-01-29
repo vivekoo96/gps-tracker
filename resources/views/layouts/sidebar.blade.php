@@ -40,6 +40,13 @@
             <span x-show="!collapsed" class="transition-opacity duration-300">Live Map</span>
         </a>
         
+        <a href="{{ route('admin.geofences.index') }}" class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150 {{ request()->routeIs('admin.geofences.*') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-r-2 border-blue-500' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100' }}">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4 text-gray-400" :class="collapsed ? 'mr-0' : 'mr-3'">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
+            </svg>
+            <span x-show="!collapsed" class="transition-opacity duration-300">Geofences</span>
+        </a>
+        
         <a href="{{ route('admin.gps.add-test-data') }}" class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4 text-green-500" :class="collapsed ? 'mr-0' : 'mr-3'">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>

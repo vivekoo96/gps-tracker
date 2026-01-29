@@ -16,6 +16,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
         ]);
+        
+        // Exclude GPS endpoints from CSRF verification (devices don't have CSRF tokens)
+        $middleware->validateCsrfTokens(except: [
+            'gps/*',
+            '/gps/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

@@ -67,20 +67,20 @@ class Device extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function gpsData()
+    public function positions()
     {
-        return $this->hasMany(GpsData::class);
+        return $this->hasMany(Position::class);
     }
 
-    public function latestGpsData()
+    public function latestPosition()
     {
-        return $this->hasOne(GpsData::class)->latestOfMany('recorded_at');
+        return $this->hasOne(Position::class)->latestOfMany('fix_time');
     }
 
     // Accessors
     public function getLastLocationAttribute()
     {
-        return $this->latestGpsData;
+        return $this->latestPosition;
     }
 
     public function getIsOnlineAttribute()

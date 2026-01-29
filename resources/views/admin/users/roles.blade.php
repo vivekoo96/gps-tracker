@@ -12,59 +12,11 @@
                     </svg>
                     Manage Users
                 </a>
-                <button onclick="alert('Role management coming soon!')" 
-                   class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                    </svg>
-                    Manage Roles
-                </button>
             </div>
         </div>
     </x-slot>
 
-    @push('styles')
-        <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
-        <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.tailwindcss.min.css">
-        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-        <style>
-            .select2-container--default .select2-selection--multiple {
-                background-color: white;
-                border: 1px solid #d1d5db;
-                border-radius: 0.375rem;
-                padding: 0.375rem 0.75rem;
-                min-height: 2.5rem;
-            }
-            .dark .select2-container--default .select2-selection--multiple {
-                background-color: #374151;
-                border-color: #4b5563;
-                color: #f9fafb;
-            }
-            .select2-container--default .select2-selection--multiple .select2-selection__choice {
-                background-color: #3b82f6;
-                border: none;
-                color: white;
-                border-radius: 0.25rem;
-                padding: 0.125rem 0.5rem;
-                margin: 0.125rem;
-            }
-            .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
-                color: white;
-                margin-right: 0.25rem;
-            }
-            .select2-dropdown {
-                border: 1px solid #d1d5db;
-                border-radius: 0.375rem;
-            }
-            .dark .select2-dropdown {
-                background-color: #374151;
-                border-color: #4b5563;
-                color: #f9fafb;
-            }
-        </style>
-    @endpush
-
-    <div class="py-6">
+    <div class="py-6" x-data="roleManager()">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             @if(session('status'))
                 <div class="mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 px-4 py-3 rounded-md">
@@ -94,8 +46,8 @@
                     <div class="p-6">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
-                                <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
                                     </svg>
                                 </div>
@@ -112,8 +64,8 @@
                     <div class="p-6">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
-                                <div class="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
                                 </div>
@@ -130,8 +82,8 @@
                     <div class="p-6">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
-                                <div class="w-8 h-8 bg-yellow-100 dark:bg-yellow-900 rounded-lg flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-lg flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
                                     </svg>
                                 </div>
@@ -148,8 +100,8 @@
                     <div class="p-6">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
-                                <div class="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                     </svg>
                                 </div>
@@ -163,228 +115,270 @@
                 </div>
             </div>
 
-            <!-- Role Assignment Table -->
+            <!-- Modern Table -->
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-xl border border-gray-200 dark:border-gray-700">
                 <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-                    <div class="flex items-center justify-between">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">User Role Assignments</h3>
-                        <div class="flex items-center space-x-2">
-                            <span class="text-sm text-gray-500 dark:text-gray-400">Bulk actions:</span>
-                            <button onclick="saveAllChanges()" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        
+                        <!-- Search and Filter -->
+                        <div class="flex items-center space-x-4">
+                            <div class="relative">
+                                <input 
+                                    type="text" 
+                                    x-model="search"
+                                    placeholder="Search users..."
+                                    class="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                <svg class="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                 </svg>
-                                Save All
-                            </button>
+                            </div>
+                            <select x-model="perPage" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                                <option value="5">5 per page</option>
+                                <option value="10">10 per page</option>
+                                <option value="25">25 per page</option>
+                                <option value="50">50 per page</option>
+                            </select>
                         </div>
                     </div>
                 </div>
-                <div class="p-6">
-                    <div class="overflow-x-auto">
-                        <table id="user-roles-table" class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-900">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">User</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Current Roles</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Assign Roles</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                @forelse($users as $user)
-                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="flex items-center">
-                                                <div class="flex-shrink-0 h-10 w-10">
-                                                    <div class="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
-                                                        <span class="text-sm font-medium text-indigo-600 dark:text-indigo-400">
-                                                            {{ strtoupper(substr($user->name, 0, 1)) }}
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-900">
+                            <tr>
+                                <th @click="sortBy('name')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800">
+                                    <div class="flex items-center space-x-1">
+                                        <span>User</span>
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+                                        </svg>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Current Roles</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Assign Roles</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            <template x-for="user in paginatedUsers" :key="user.id">
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-10 w-10">
+                                                <div class="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+                                                    <span class="text-sm font-medium text-indigo-600 dark:text-indigo-400" x-text="user.name.charAt(0).toUpperCase()"></span>
+                                                </div>
+                                            </div>
+                                            <div class="ml-4">
+                                                <div class="text-sm font-medium text-gray-900 dark:text-gray-100" x-text="user.name"></div>
+                                                <div class="text-sm text-gray-500 dark:text-gray-400" x-text="user.email"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex flex-wrap gap-1">
+                                            <template x-for="role in user.roles" :key="role.id">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                                      :class="{
+                                                          'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200': role.name === 'admin',
+                                                          'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200': role.name === 'manager',
+                                                          'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200': role.name !== 'admin' && role.name !== 'manager'
+                                                      }"
+                                                      x-text="role.name.charAt(0).toUpperCase() + role.name.slice(1)">
+                                                </span>
+                                            </template>
+                                            <template x-if="user.roles.length === 0">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                                                    No roles assigned
+                                                </span>
+                                            </template>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <form :action="`{{ url('admin/users') }}/${user.id}/roles`" method="POST">
+                                            @csrf
+                                            @method('PUT')
+                                            <div class="relative" x-data="{ open: false, selected: user.roles.map(r => r.name) }">
+                                                <button @click="open = !open" type="button"
+                                                        class="relative w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-pointer focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                                    <span class="block truncate text-gray-900 dark:text-gray-100" x-text="selected.length > 0 ? selected.join(', ') : 'Select roles...'"></span>
+                                                    <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                        </svg>
+                                                    </span>
+                                                </button>
+                                                <div x-show="open" @click.away="open = false"
+                                                     class="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                                                    @foreach($roles as $role)
+                                                    <div @click="selected.includes('{{ $role->name }}') ? selected = selected.filter(r => r !== '{{ $role->name }}') : selected.push('{{ $role->name }}')"
+                                                         class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-indigo-600 hover:text-white"
+                                                         :class="selected.includes('{{ $role->name }}') ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-900 dark:text-indigo-100' : 'text-gray-900 dark:text-gray-100'">
+                                                        <span class="block truncate" :class="selected.includes('{{ $role->name }}') ? 'font-semibold' : 'font-normal'">
+                                                            {{ ucfirst($role->name) }}
+                                                        </span>
+                                                        <span x-show="selected.includes('{{ $role->name }}')" class="absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-600">
+                                                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                                            </svg>
                                                         </span>
                                                     </div>
-                                                </div>
-                                                <div class="ml-4">
-                                                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $user->name }}</div>
-                                                    <div class="text-sm text-gray-500 dark:text-gray-400">{{ $user->email }}</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="flex flex-wrap gap-1">
-                                                @forelse($user->roles as $role)
-                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                                        {{ $role->name === 'admin' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : 
-                                                           ($role->name === 'manager' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' : 
-                                                            'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200') }}">
-                                                        {{ ucfirst($role->name) }}
-                                                    </span>
-                                                @empty
-                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                                                        No roles assigned
-                                                    </span>
-                                                @endforelse
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            <form action="{{ route('admin.users.roles.update', $user) }}" method="POST" class="role-form">
-                                                @csrf
-                                                @method('PUT')
-                                                <select name="roles[]" multiple class="role-select w-full" data-user-id="{{ $user->id }}">
-                                                    @foreach($roles as $role)
-                                                        <option value="{{ $role->name }}" {{ $user->hasRole($role->name) ? 'selected' : '' }}>
-                                                            {{ ucfirst($role->name) }}
-                                                        </option>
                                                     @endforeach
-                                                </select>
-                                            </form>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <div class="flex items-center space-x-2">
-                                                <button onclick="saveUserRoles({{ $user->id }})" 
-                                                        class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
-                                                        title="Save Changes">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                                    </svg>
-                                                </button>
-                                                <button onclick="resetUserRoles({{ $user->id }})" 
-                                                        class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
-                                                        title="Reset Changes">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                                    </svg>
-                                                </button>
-                                                <a href="{{ route('admin.users.index') }}" 
-                                                   class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-                                                   title="View User Details">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                                    </svg>
-                                                </a>
+                                                </div>
+                                                <template x-for="role in selected" :key="role">
+                                                    <input type="hidden" name="roles[]" :value="role">
+                                                </template>
                                             </div>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="4" class="px-6 py-12 text-center">
-                                            <div class="flex flex-col items-center">
-                                                <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                                        </form>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div class="flex items-center space-x-3">
+                                            <button @click="saveUserRoles(user.id)"
+                                                    class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
+                                                    title="Save Changes">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                                 </svg>
-                                                <p class="text-gray-500 dark:text-gray-400 text-lg">No users found</p>
-                                                <p class="text-gray-400 dark:text-gray-500 text-sm mt-1">Create some users first to assign roles</p>
-                                                <a href="{{ route('admin.users.index') }}" 
-                                                   class="mt-4 inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition ease-in-out duration-150">
-                                                    Manage Users
-                                                </a>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                                            </button>
+                                            <a :href="`{{ route('admin.users.index') }}`"
+                                               class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                                               title="View User Details">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="bg-white dark:bg-gray-800 px-4 py-3 border-t border-gray-200 dark:border-gray-700 sm:px-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1 flex justify-between sm:hidden">
+                            <button @click="currentPage--" :disabled="currentPage === 1"
+                                    class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50">
+                                Previous
+                            </button>
+                            <button @click="currentPage++" :disabled="currentPage === totalPages"
+                                    class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50">
+                                Next
+                            </button>
+                        </div>
+                        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-sm text-gray-700 dark:text-gray-300">
+                                    Showing <span class="font-medium" x-text="startIndex + 1"></span> to <span class="font-medium" x-text="Math.min(endIndex, filteredUsers.length)"></span> of <span class="font-medium" x-text="filteredUsers.length"></span> results
+                                </p>
+                            </div>
+                            <div>
+                                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                                    <button @click="currentPage--" :disabled="currentPage === 1"
+                                            class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50">
+                                        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    </button>
+                                    <template x-for="page in totalPages" :key="page">
+                                        <button @click="currentPage = page"
+                                                :class="currentPage === page ? 'bg-indigo-50 dark:bg-indigo-900 border-indigo-500 text-indigo-600 dark:text-indigo-300' : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'"
+                                                class="relative inline-flex items-center px-4 py-2 border text-sm font-medium"
+                                                x-text="page">
+                                        </button>
+                                    </template>
+                                    <button @click="currentPage++" :disabled="currentPage === totalPages"
+                                            class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50">
+                                        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    </button>
+                                </nav>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    @push('scripts')
-        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-        <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                // Initialize DataTable
-                $('#user-roles-table').DataTable({
-                    pageLength: 10,
-                    order: [[0, 'asc']],
-                    responsive: true,
-                    language: {
-                        search: "Search users:",
-                        lengthMenu: "Show _MENU_ users per page",
-                        info: "Showing _START_ to _END_ of _TOTAL_ users",
-                        emptyTable: "No users available for role assignment"
-                    },
-                    columnDefs: [
-                        { orderable: false, targets: [2, 3] } // Disable sorting on Assign Roles and Actions columns
-                    ]
-                });
+    <script>
+        function roleManager() {
+            return {
+                users: {!! json_encode($users->map(function($user) {
+                    return [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'roles' => $user->roles->map(function($role) {
+                            return ['id' => $role->id, 'name' => $role->name];
+                        })->toArray()
+                    ];
+                })->toArray()) !!},
+                search: '',
+                sortColumn: 'name',
+                sortDirection: 'asc',
+                currentPage: 1,
+                perPage: 10,
 
-                // Initialize Select2 for role selection
-                $('.role-select').select2({
-                    placeholder: 'Select roles...',
-                    allowClear: true,
-                    width: '100%',
-                    theme: 'default'
-                });
+                get filteredUsers() {
+                    let filtered = this.users;
+                    
+                    if (this.search) {
+                        filtered = filtered.filter(user => 
+                            user.name.toLowerCase().includes(this.search.toLowerCase()) ||
+                            user.email.toLowerCase().includes(this.search.toLowerCase())
+                        );
+                    }
 
-                // Store original values for reset functionality
-                $('.role-select').each(function() {
-                    $(this).data('original-value', $(this).val());
-                });
-            });
-
-            // Save roles for a specific user
-            function saveUserRoles(userId) {
-                const form = document.querySelector(`select[data-user-id="${userId}"]`).closest('form');
-                
-                // Show loading state
-                const button = event.target.closest('button');
-                const originalContent = button.innerHTML;
-                button.innerHTML = '<svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>';
-                button.disabled = true;
-
-                // Submit form
-                form.submit();
-            }
-
-            // Reset roles for a specific user
-            function resetUserRoles(userId) {
-                const select = document.querySelector(`select[data-user-id="${userId}"]`);
-                const originalValue = $(select).data('original-value');
-                
-                $(select).val(originalValue).trigger('change');
-            }
-
-            // Save all changes
-            function saveAllChanges() {
-                if (confirm('Are you sure you want to save all role assignments? This will update all users at once.')) {
-                    // Submit all forms sequentially
-                    const forms = document.querySelectorAll('.role-form');
-                    let currentForm = 0;
-
-                    function submitNextForm() {
-                        if (currentForm < forms.length) {
-                            forms[currentForm].submit();
-                            currentForm++;
+                    return filtered.sort((a, b) => {
+                        let aVal = a[this.sortColumn];
+                        let bVal = b[this.sortColumn];
+                        
+                        if (this.sortDirection === 'asc') {
+                            return aVal > bVal ? 1 : -1;
+                        } else {
+                            return aVal < bVal ? 1 : -1;
                         }
-                    }
+                    });
+                },
 
-                    if (forms.length > 0) {
-                        // For now, just submit the first form as an example
-                        // In a real implementation, you'd want to handle this via AJAX
-                        alert('Bulk save functionality would be implemented via AJAX for better user experience.');
+                get paginatedUsers() {
+                    const start = (this.currentPage - 1) * this.perPage;
+                    const end = start + this.perPage;
+                    return this.filteredUsers.slice(start, end);
+                },
+
+                get totalPages() {
+                    return Math.ceil(this.filteredUsers.length / this.perPage);
+                },
+
+                get startIndex() {
+                    return (this.currentPage - 1) * this.perPage;
+                },
+
+                get endIndex() {
+                    return this.startIndex + this.perPage;
+                },
+
+                sortBy(column) {
+                    if (this.sortColumn === column) {
+                        this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        this.sortColumn = column;
+                        this.sortDirection = 'asc';
                     }
+                },
+
+                saveUserRoles(userId) {
+                    const form = event.target.closest('tr').querySelector('form');
+                    form.submit();
                 }
             }
-
-            // Add change detection
-            $('.role-select').on('change', function() {
-                const userId = $(this).data('user-id');
-                const originalValue = $(this).data('original-value');
-                const currentValue = $(this).val();
-                
-                // Visual indication of changes
-                const row = $(this).closest('tr');
-                if (JSON.stringify(originalValue) !== JSON.stringify(currentValue)) {
-                    row.addClass('bg-yellow-50 dark:bg-yellow-900/20');
-                } else {
-                    row.removeClass('bg-yellow-50 dark:bg-yellow-900/20');
-                }
-            });
-        </script>
-    @endpush
+        }
+    </script>
 </x-app-layout>
-
-

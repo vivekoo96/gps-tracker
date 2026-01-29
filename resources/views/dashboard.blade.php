@@ -320,25 +320,33 @@
             
             devices.forEach(device => {
                 if (device.latitude && device.longitude) {
-                    // Create custom icon based on device status
-                    const iconColor = device.is_moving ? 'green' : 'blue';
+                    // Create custom car icon based on device status
+                    const iconColor = device.is_moving ? '#10b981' : '#3b82f6'; // green if moving, blue if stationary
+                    const rotation = device.heading || 0; // Use heading for rotation
+                    
                     const iconHtml = `
                         <div style="
-                            background-color: ${iconColor};
-                            width: 20px;
-                            height: 20px;
-                            border-radius: 50%;
-                            border: 3px solid white;
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-                        "></div>
+                            transform: rotate(${rotation}deg);
+                            transform-origin: center;
+                        ">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Car body -->
+                                <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5H6.5C5.84 5 5.28 5.42 5.08 6.01L3 12V20C3 20.55 3.45 21 4 21H5C5.55 21 6 20.55 6 20V19H18V20C18 20.55 18.45 21 19 21H20C20.55 21 21 20.55 21 20V12L18.92 6.01ZM6.5 16C5.67 16 5 15.33 5 14.5S5.67 13 6.5 13 8 13.67 8 14.5 7.33 16 6.5 16ZM17.5 16C16.67 16 16 15.33 16 14.5S16.67 13 17.5 13 19 13.67 19 14.5 18.33 16 17.5 16ZM5 11L6.5 6.5H17.5L19 11H5Z" 
+                                      fill="${iconColor}" 
+                                      stroke="white" 
+                                      stroke-width="0.5"/>
+                                <!-- Windshield -->
+                                <path d="M7 8L8.5 6.5H15.5L17 8H7Z" fill="rgba(255,255,255,0.3)"/>
+                            </svg>
+                        </div>
                     `;
                     
                     const customIcon = L.divIcon({
                         html: iconHtml,
-                        iconSize: [20, 20],
-                        iconAnchor: [10, 10],
-                        popupAnchor: [0, -10],
-                        className: 'custom-div-icon'
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 16],
+                        popupAnchor: [0, -16],
+                        className: 'custom-car-icon'
                     });
                     
                     // Create popup content
@@ -540,24 +548,32 @@
         
         // Add single device marker
         function addDeviceMarker(device) {
-            const iconColor = device.is_moving ? 'green' : 'blue';
+            const iconColor = device.is_moving ? '#10b981' : '#3b82f6'; // green if moving, blue if stationary
+            const rotation = device.heading || 0;
+            
             const iconHtml = `
                 <div style="
-                    background-color: ${iconColor};
-                    width: 20px;
-                    height: 20px;
-                    border-radius: 50%;
-                    border: 3px solid white;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-                "></div>
+                    transform: rotate(${rotation}deg);
+                    transform-origin: center;
+                ">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Car body -->
+                        <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5H6.5C5.84 5 5.28 5.42 5.08 6.01L3 12V20C3 20.55 3.45 21 4 21H5C5.55 21 6 20.55 6 20V19H18V20C18 20.55 18.45 21 19 21H20C20.55 21 21 20.55 21 20V12L18.92 6.01ZM6.5 16C5.67 16 5 15.33 5 14.5S5.67 13 6.5 13 8 13.67 8 14.5 7.33 16 6.5 16ZM17.5 16C16.67 16 16 15.33 16 14.5S16.67 13 17.5 13 19 13.67 19 14.5 18.33 16 17.5 16ZM5 11L6.5 6.5H17.5L19 11H5Z" 
+                              fill="${iconColor}" 
+                              stroke="white" 
+                              stroke-width="0.5"/>
+                        <!-- Windshield -->
+                        <path d="M7 8L8.5 6.5H15.5L17 8H7Z" fill="rgba(255,255,255,0.3)"/>
+                    </svg>
+                </div>
             `;
             
             const customIcon = L.divIcon({
                 html: iconHtml,
-                iconSize: [20, 20],
-                iconAnchor: [10, 10],
-                popupAnchor: [0, -10],
-                className: 'custom-div-icon'
+                iconSize: [32, 32],
+                iconAnchor: [16, 16],
+                popupAnchor: [0, -16],
+                className: 'custom-car-icon'
             });
             
             const popupContent = `

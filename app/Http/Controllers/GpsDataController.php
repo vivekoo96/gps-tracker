@@ -290,7 +290,7 @@ class GpsDataController extends Controller
      */
     private function storePosition(Device $device, array $gpsData): Position
     {
-        return Position::create([
+        $position = Position::create([
             'device_id' => $device->id,
             'fix_time' => $gpsData['timestamp'],
             'latitude' => $gpsData['latitude'],
@@ -305,6 +305,18 @@ class GpsDataController extends Controller
                 'raw_data' => $gpsData,
             ])),
         ]);
+
+        // Check geofences for this position
+        try {
+            app(\App\Services\GeofenceCheckService::class)->checkPosition($device, $position);
+        } catch (\Exception $e) {
+            Log::error('Geofence check failed', [
+                'device_id' => $device->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        return $position;
     }
 
     /**
