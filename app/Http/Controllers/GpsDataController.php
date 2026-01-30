@@ -84,6 +84,87 @@ class GpsDataController extends Controller
     }
 
     /**
+     * Store GPS data via API (for testing and simple integrations)
+     */
+    public function store(Request $request): JsonResponse
+    {
+        try {
+            // Validate incoming data
+            $validated = $request->validate([
+                'imei' => 'required|string',
+                'latitude' => 'required|numeric|between:-90,90',
+                'longitude' => 'required|numeric|between:-180,180',
+                'speed' => 'nullable|numeric|min:0',
+                'altitude' => 'nullable|numeric',
+                'fix_time' => 'nullable|date',
+                'course' => 'nullable|numeric|between:0,359',
+                'satellites' => 'nullable|integer|min:0',
+            ]);
+
+            // Find device by IMEI
+            $device = Device::where('imei', $validated['imei'])->first();
+            
+            if (!$device) {
+                return response()->json([
+                    'error' => 'Device not found',
+                    'message' => 'No device found with the provided IMEI'
+                ], 404);
+            }
+
+            // Create position record
+            $position = Position::create([
+                'device_id' => $device->id,
+                'latitude' => $validated['latitude'],
+                'longitude' => $validated['longitude'],
+                'speed' => $validated['speed'] ?? 0,
+                'altitude' => $validated['altitude'] ?? null,
+                'course' => $validated['course'] ?? null,
+                'satellites' => $validated['satellites'] ?? null,
+                'fix_time' => $validated['fix_time'] ?? now(),
+            ]);
+
+            // Check geofences
+            try {
+                app(\App\Services\GeofenceCheckService::class)->checkPosition($device, $position);
+            } catch (\Exception $e) {
+                Log::error('Geofence check failed', [
+                    'device_id' => $device->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+            // Update device last seen
+            $device->update([
+                'last_seen_at' => now(),
+                'status' => 'active'
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'GPS data stored successfully',
+                'position_id' => $position->id,
+                'device_id' => $device->id
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'error' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('GPS Data Store Error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'error' => 'Failed to store GPS data',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Parse GPS data from various formats
      */
     private function parseGpsData(Request $request): ?array
