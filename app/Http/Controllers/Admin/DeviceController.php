@@ -50,7 +50,12 @@ class DeviceController extends Controller
             'status' => ['required', Rule::in(['inactive', 'active'])],
         ]);
 
-        Device::create($validated);
+        // Map new fields to legacy fields for backward compatibility
+        $data = $validated;
+        $data['model'] = $validated['device_type'] ?? 'Unknown';
+        $data['imei'] = $validated['unique_id'];
+
+        Device::create($data);
 
         return redirect()->route('admin.devices.index')->with('status', 'Device created successfully');
     }
@@ -88,7 +93,16 @@ class DeviceController extends Controller
             'status' => ['required', Rule::in(['inactive', 'active'])],
         ]);
 
-        $device->update($validated);
+        // Map new fields to legacy fields for backward compatibility
+        $data = $validated;
+        if (isset($validated['device_type'])) {
+            $data['model'] = $validated['device_type'];
+        }
+        if (isset($validated['unique_id'])) {
+            $data['imei'] = $validated['unique_id'];
+        }
+
+        $device->update($data);
 
         return redirect()->route('admin.devices.index')->with('status', 'Device updated');
     }
