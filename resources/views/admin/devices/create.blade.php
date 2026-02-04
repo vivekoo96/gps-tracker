@@ -546,7 +546,7 @@
 
         // Device Models Data
         const deviceModels = {
-            'gps': ['GT06', 'TK103', 'TK102', 'H02', 'GT800', 'MT100', 'Teltonika FMB920', 'Concox'],
+            'gps': ['G07', 'GT06', 'TK103', 'TK102', 'H02', 'GT800', 'MT100', 'Teltonika FMB920', 'Concox'],
             'fuel': ['Omnicomm LLS 5', 'Italon', 'Epsilon ES', 'Technoton DUT-E', 'Generic Analog'],
             'dashcam': ['JC400', 'Streamax X3', 'Recoda', 'Thinkware', 'BlackVue', 'Generic DVR']
         };
@@ -565,10 +565,28 @@
             }
         });
 
+        // Server Configuration Map
+        const serverPorts = {
+            'default': '5023',
+            'GT06': '5023', 'GT06N': '5023', 'G07': '5023', 'GT800': '5023', 'WanWay EV02': '5023', 'MT100': '5023', 'ST901': '5023', 'A6': '5023',
+            'Concox': '5023', 'Concox GT06N': '5023', 'Concox GT06': '5023', 'Concox GT300': '5023', 'Concox AT4': '5023', 'Concox HVT001': '5023', 'Concox OB22': '5023', 'OBD GT02A': '5023',
+            'TK102': '8082', 'TK103': '8082', 'TK104': '8082', 'TK105': '8082', 'OBD TK206': '8082',
+            'Teltonika FMB920': '5027', 'Teltonika FMB130': '5027', 'Teltonika FMC130': '5027', 'Teltonika FMB125': '5027',
+            'Queclink GV300': '6001', 'Queclink GT300': '6001', 'Queclink GV500': '6001', 'Queclink GL300': '6001', 'H02': '6001'
+        };
+
+        const currentHost = '{{ request()->getHost() }}';
+
         // Event Listener for Category Change
         categorySelect.addEventListener('change', function() {
             updateModelOptions(this.value);
             generateDeviceName();
+            updateServerAddress();
+        });
+
+        // Event Listener for Model Change
+        modelSelect.addEventListener('change', function() {
+            updateServerAddress();
         });
 
         unitTypeField.addEventListener('change', generateDeviceName);
@@ -582,11 +600,27 @@
                     const option = document.createElement('option');
                     option.value = model;
                     option.textContent = model;
+                    
+                    // Set data-server attribute
+                    const port = serverPorts[model] || serverPorts['default'];
+                    option.setAttribute('data-server', `${currentHost}:${port}`);
+
                     if (selectedModel && selectedModel === model) {
                         option.selected = true;
                     }
                     modelSelect.appendChild(option);
                 });
+            }
+        }
+
+        function updateServerAddress() {
+            const selectedOption = modelSelect.options[modelSelect.selectedIndex];
+            const serverInput = document.getElementById('server_address');
+            
+            if (selectedOption && selectedOption.getAttribute('data-server')) {
+                serverInput.value = selectedOption.getAttribute('data-server');
+            } else {
+                serverInput.value = '';
             }
         }
 

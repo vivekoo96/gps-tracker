@@ -119,6 +119,7 @@
                                     <option value="Queclink GL300" data-server="{{ request()->getHost() }}:6001" @selected(old('device_type', $device->device_type ?? $device->model) === 'Queclink GL300')>Queclink GL300 - Personal GPS Logger</option>
                                     
                                     <!-- Other Popular Models -->
+                                    <option value="G07" data-server="{{ request()->getHost() }}:5023" @selected(old('device_type', $device->device_type ?? $device->model) === 'G07')>G07 - Mini GPS Tracker</option>
                                     <option value="GT06N" data-server="{{ request()->getHost() }}:5023" @selected(old('device_type', $device->device_type ?? $device->model) === 'GT06N')>GT06N - Basic GPS Tracker</option>
                                     <option value="MT100" data-server="{{ request()->getHost() }}:5023" @selected(old('device_type', $device->device_type ?? $device->model) === 'MT100')>MT100 - Mini GPS Tracker</option>
                                     <option value="H02" data-server="{{ request()->getHost() }}:6001" @selected(old('device_type', $device->device_type ?? $device->model) === 'H02')>H02 - Watch GPS Tracker</option>
