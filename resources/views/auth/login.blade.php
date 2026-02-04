@@ -10,11 +10,27 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="font-sans text-gray-900 antialiased bg-white dark:bg-gray-900">
+        @php
+            $currentVendor = app()->bound('current_vendor') ? app('current_vendor') : null;
+            $primaryColor = ($currentVendor && $currentVendor->primary_color) ? $currentVendor->primary_color : '#051643';
+            
+            // Generate a slightly lighter version for gradients if we don't have one
+            // This is a simple PHP-based color manipulation or just hardcoded offset
+            $secondaryColor = (strtoupper($primaryColor) == '#051643') ? '#0b2b6d' : $primaryColor . 'DD'; 
+        @endphp
+
+        <style>
+            :root {
+                --theme-color: {{ $primaryColor }};
+                --theme-secondary: {{ $secondaryColor }};
+            }
+        </style>
+
         <div class="min-h-screen flex">
             <!-- Left Side: Branding -->
-            <div class="hidden lg:flex lg:w-1/2 bg-[#051643] relative overflow-hidden items-center justify-center">
+            <div class="hidden lg:flex lg:w-1/2 bg-[var(--theme-color)] relative overflow-hidden items-center justify-center">
                 <!-- Premium Gradient & Texture -->
-                <div class="absolute inset-0 bg-gradient-to-br from-[#051643] via-[#0b2b6d] to-[#051643] opacity-100"></div>
+                <div class="absolute inset-0 bg-gradient-to-br from-[var(--theme-color)] via-[var(--theme-secondary)] to-[var(--theme-color)] opacity-100"></div>
                 <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay"></div>
                 
                 <!-- Abstract Shapes -->
@@ -62,7 +78,7 @@
                                 <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email address</label>
                                 <div class="relative">
                                     <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="username" 
-                                        class="block w-full px-4 py-3.5 rounded-xl text-gray-900 bg-gray-50 border border-gray-200 focus:bg-white focus:border-[#051643] focus:ring-2 focus:ring-[#051643]/20 transition-all duration-200 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:focus:border-[#051643] placeholder-gray-400 sm:text-sm"
+                                        class="block w-full px-4 py-3.5 rounded-xl text-gray-900 bg-gray-50 border border-gray-200 focus:bg-white focus:border-[var(--theme-color)] focus:ring-2 focus:ring-[var(--theme-color)]/20 transition-all duration-200 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:focus:border-[var(--theme-color)] placeholder-gray-400 sm:text-sm"
                                         placeholder="admin@example.com">
                                 </div>
                                 <x-input-error :messages="$errors->get('email')" class="mt-2" />
@@ -73,7 +89,7 @@
                                 <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Password</label>
                                 <div class="relative">
                                     <input id="password" ::type="show ? 'text' : 'password'" name="password" required autocomplete="current-password"
-                                        class="block w-full px-4 py-3.5 pr-12 rounded-xl text-gray-900 bg-gray-50 border border-gray-200 focus:bg-white focus:border-[#051643] focus:ring-2 focus:ring-[#051643]/20 transition-all duration-200 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:focus:border-[#051643] placeholder-gray-400 sm:text-sm"
+                                        class="block w-full px-4 py-3.5 pr-12 rounded-xl text-gray-900 bg-gray-50 border border-gray-200 focus:bg-white focus:border-[var(--theme-color)] focus:ring-2 focus:ring-[var(--theme-color)]/20 transition-all duration-200 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:focus:border-[var(--theme-color)] placeholder-gray-400 sm:text-sm"
                                         placeholder="••••••••">
                                     <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-gray-600 transition-colors">
                                         <svg x-show="!show" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
@@ -86,18 +102,18 @@
 
                         <div class="flex items-center justify-between">
                             <label for="remember_me" class="inline-flex items-center group cursor-pointer">
-                                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-[#051643] shadow-sm focus:ring-[#051643] cursor-pointer" name="remember">
+                                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-[var(--theme-color)] shadow-sm focus:ring-[var(--theme-color)] cursor-pointer" name="remember">
                                 <span class="ml-2 text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{{ __('Remember me') }}</span>
                             </label>
                             
                             @if (Route::has('password.request'))
-                                <a class="text-sm font-medium text-[#051643] hover:text-[#0b2b6d] transition-colors" href="{{ route('password.request') }}">
+                                <a class="text-sm font-medium text-[var(--theme-color)] hover:text-[var(--theme-secondary)] transition-colors" href="{{ route('password.request') }}">
                                     Forgot password?
                                 </a>
                             @endif
                         </div>
 
-                        <button type="submit" class="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-lg shadow-[#051643]/30 text-sm font-semibold text-white bg-gradient-to-r from-[#051643] to-[#0b2b6d] hover:from-[#0b2b6d] hover:to-[#051643] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#051643] transition-all duration-200 transform hover:-translate-y-0.5">
+                        <button type="submit" class="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-lg shadow-[var(--theme-color)]/30 text-sm font-semibold text-white bg-gradient-to-r from-[var(--theme-color)] to-[var(--theme-secondary)] hover:from-[var(--theme-secondary)] hover:to-[var(--theme-color)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--theme-color)] transition-all duration-200 transform hover:-translate-y-0.5">
                             {{ __('Sign in') }}
                         </button>
                     </form>

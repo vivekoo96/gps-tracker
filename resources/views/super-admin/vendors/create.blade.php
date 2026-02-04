@@ -87,6 +87,17 @@
                                 <x-input-error :messages="$errors->get('logo')" class="mt-2" />
                             </div>
 
+                            <!-- Primary Brand Color -->
+                            <div>
+                                <label for="primary_color" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Primary Brand Color</label>
+                                <div class="flex items-center space-x-3">
+                                    <input type="color" name="primary_color" id="primary_color" value="{{ old('primary_color', '#051643') }}" class="h-10 w-20 rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-900 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer">
+                                    <input type="text" id="color_hex" value="{{ old('primary_color', '#051643') }}" class="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm uppercase" maxlength="7">
+                                </div>
+                                <p class="mt-1 text-xs text-gray-500">This color will be used for the login page buttons and background.</p>
+                                <x-input-error :messages="$errors->get('primary_color')" class="mt-2" />
+                            </div>
+
                             <!-- Subscription Plan -->
                             <div class="md:col-span-2">
                                 <label for="subscription_plan_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subscription Plan</label>
@@ -119,4 +130,15 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.getElementById('primary_color').addEventListener('input', function(e) {
+            document.getElementById('color_hex').value = e.target.value;
+        });
+        document.getElementById('color_hex').addEventListener('input', function(e) {
+            if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
+                document.getElementById('primary_color').value = e.target.value;
+            }
+        });
+    </script>
 </x-app-layout>

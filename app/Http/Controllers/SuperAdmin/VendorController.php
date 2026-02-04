@@ -32,6 +32,7 @@ class VendorController extends Controller
             'phone' => 'nullable|string|max:20',
             'subscription_plan_id' => 'required|exists:subscription_plans,id',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'primary_color' => 'nullable|string|max:7',
         ]);
 
         if ($request->hasFile('logo')) {
@@ -80,6 +81,7 @@ class VendorController extends Controller
             'subscription_plan_id' => 'required|exists:subscription_plans,id',
             'status' => 'required|in:active,inactive,suspended',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'primary_color' => 'nullable|string|max:7',
         ]);
 
         if ($request->hasFile('logo')) {
