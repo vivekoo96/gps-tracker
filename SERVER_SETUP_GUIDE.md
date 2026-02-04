@@ -209,6 +209,11 @@ Or view in web interface:
 # Update system
 sudo apt update && sudo apt upgrade -y
 
+# Add Ondrej PHP PPA (Required for PHP 8.2 on older Ubuntu versions)
+sudo apt install -y software-properties-common
+sudo add-apt-repository ppa:ondrej/php -y
+sudo apt update
+
 # Install PHP 8.2
 sudo apt install php8.2 php8.2-fpm php8.2-mysql php8.2-sockets php8.2-mbstring php8.2-xml php8.2-curl -y
 

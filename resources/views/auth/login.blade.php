@@ -12,9 +12,9 @@
     <body class="font-sans text-gray-900 antialiased bg-white dark:bg-gray-900">
         <div class="min-h-screen flex">
             <!-- Left Side: Branding -->
-            <div class="hidden lg:flex lg:w-1/2 bg-blue-600 relative overflow-hidden items-center justify-center">
+            <div class="hidden lg:flex lg:w-1/2 bg-[#051643] relative overflow-hidden items-center justify-center">
                 <!-- Premium Gradient & Texture -->
-                <div class="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-800 opacity-100"></div>
+                <div class="absolute inset-0 bg-gradient-to-br from-[#051643] via-[#0b2b6d] to-[#051643] opacity-100"></div>
                 <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay"></div>
                 
                 <!-- Abstract Shapes -->
@@ -24,10 +24,12 @@
                 <!-- Logo Content -->
                 <div class="relative z-10 p-12 text-center">
                     <div class="flex flex-col items-center justify-center">
-                         <!-- White Logo using CSS Filter -->
-                         <img src="{{ \App\Models\GlobalSetting::where('key', 'logo')->value('value') }}" 
-                              alt="Logo" 
-                              class="w-auto h-32 object-contain brightness-0 invert drop-shadow-2xl">
+                         <!-- Logo with White Background -->
+                         <div class="bg-white p-6 rounded-2xl shadow-2xl mb-6">
+                            <img src="{{ \App\Models\GlobalSetting::where('key', 'logo')->value('value') }}" 
+                                 alt="Logo" 
+                                 class="w-auto h-24 object-contain">
+                         </div>
                          
                         
                     </div>
@@ -54,7 +56,7 @@
                                 <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email address</label>
                                 <div class="relative">
                                     <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="username" 
-                                        class="block w-full px-4 py-3.5 rounded-xl text-gray-900 bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:focus:border-blue-500 placeholder-gray-400 sm:text-sm"
+                                        class="block w-full px-4 py-3.5 rounded-xl text-gray-900 bg-gray-50 border border-gray-200 focus:bg-white focus:border-[#051643] focus:ring-2 focus:ring-[#051643]/20 transition-all duration-200 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:focus:border-[#051643] placeholder-gray-400 sm:text-sm"
                                         placeholder="admin@example.com">
                                 </div>
                                 <x-input-error :messages="$errors->get('email')" class="mt-2" />
@@ -65,7 +67,7 @@
                                 <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Password</label>
                                 <div class="relative">
                                     <input id="password" ::type="show ? 'text' : 'password'" name="password" required autocomplete="current-password"
-                                        class="block w-full px-4 py-3.5 pr-12 rounded-xl text-gray-900 bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:focus:border-blue-500 placeholder-gray-400 sm:text-sm"
+                                        class="block w-full px-4 py-3.5 pr-12 rounded-xl text-gray-900 bg-gray-50 border border-gray-200 focus:bg-white focus:border-[#051643] focus:ring-2 focus:ring-[#051643]/20 transition-all duration-200 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:focus:border-[#051643] placeholder-gray-400 sm:text-sm"
                                         placeholder="••••••••">
                                     <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-gray-600 transition-colors">
                                         <svg x-show="!show" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
@@ -78,18 +80,18 @@
 
                         <div class="flex items-center justify-between">
                             <label for="remember_me" class="inline-flex items-center group cursor-pointer">
-                                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500 cursor-pointer" name="remember">
+                                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-[#051643] shadow-sm focus:ring-[#051643] cursor-pointer" name="remember">
                                 <span class="ml-2 text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{{ __('Remember me') }}</span>
                             </label>
                             
                             @if (Route::has('password.request'))
-                                <a class="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors" href="{{ route('password.request') }}">
+                                <a class="text-sm font-medium text-[#051643] hover:text-[#0b2b6d] transition-colors" href="{{ route('password.request') }}">
                                     Forgot password?
                                 </a>
                             @endif
                         </div>
 
-                        <button type="submit" class="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-lg shadow-blue-500/30 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:-translate-y-0.5">
+                        <button type="submit" class="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-lg shadow-[#051643]/30 text-sm font-semibold text-white bg-gradient-to-r from-[#051643] to-[#0b2b6d] hover:from-[#0b2b6d] hover:to-[#051643] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#051643] transition-all duration-200 transform hover:-translate-y-0.5">
                             {{ __('Sign in') }}
                         </button>
                     </form>
