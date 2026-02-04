@@ -26,7 +26,13 @@
                     <div class="flex flex-col items-center justify-center">
                          <!-- Logo with White Background -->
                          <div class="bg-white p-6 rounded-2xl shadow-2xl mb-6">
-                            <img src="{{ \App\Models\GlobalSetting::where('key', 'logo')->value('value') }}" 
+                            @php
+                                $currentVendor = app()->bound('current_vendor') ? app('current_vendor') : null;
+                                $logoUrl = ($currentVendor && $currentVendor->logo) 
+                                    ? asset('storage/' . $currentVendor->logo) 
+                                    : site_setting('logo');
+                            @endphp
+                            <img src="{{ $logoUrl }}" 
                                  alt="Logo" 
                                  class="w-auto h-24 object-contain">
                          </div>
