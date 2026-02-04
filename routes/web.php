@@ -116,6 +116,7 @@ Route::middleware(['auth', 'role:admin|super_admin|vendor_admin'])->prefix('admi
         Route::get('/device/{device}/map', [App\Http\Controllers\Admin\GpsTrackingController::class, 'deviceMap'])->name('device-map');
         Route::get('/device/{device}/history', [App\Http\Controllers\Admin\GpsTrackingController::class, 'deviceHistory'])->name('device-history');
         Route::get('/live-data/{device?}', [App\Http\Controllers\Admin\GpsTrackingController::class, 'liveData'])->name('live-data');
+        Route::get('/add-test-data', [App\Http\Controllers\Admin\GpsTrackingController::class, 'addTestData'])->name('add-test-data');
     });
 
     // --- Restricted System Management (Super Admin & System Admin Only) ---

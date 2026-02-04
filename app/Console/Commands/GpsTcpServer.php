@@ -109,97 +109,73 @@ class GpsTcpServer extends Command
 
         $hex = bin2hex($buffer);
 
-        // CHECK PROTOCOL: GT06 (0x78 0x78)
-        if (str_starts_with($hex, '7878')) {
-            // GT06 Packet Structure: 78 78 [1 byte Len] [1 byte Protocol] ...
-            $pkgLen = hexdec(substr($hex, 4, 2)); // Length of content AFTER length byte
-            // Total Packet Length = 2 (Start) + 1 (LenByte) + $pkgLen + 2 (Stop 0D 0A)
-            // Wait, standard GT06: Start(2) + Len(1) + Proto(1) + Content(N) + Serial(2) + CRC(2) + Stop(2)
-            // The 'Len' byte usually covers (Proto + Content + Serial + CRC).
-            // So Total Bytes = 2 (Start) + 1 (LenByte) + LenValue + 2 (Stop) ?
-            // Let's assume standard: 
-            // 78 78 [Len] [Proto] ... [CRC] 0D 0A
-            // Length check:
-            $totalExpectedBytes = 2 + 1 + $pkgLen + 2; 
-
-            // Error check: if calculated length is crazy big, might be garbage
-            if ($pkgLen > 200) {
-                 // Reset buffer to prevent memory issues with garbage
-                 $ctx['buffer'] = '';
-                 return;
+        // CHECK PROTOCOL: GT06 (0x78 0x78) OR (0x79 0x79)
+        if (str_starts_with($hex, '7878') || str_starts_with($hex, '7979')) {
+            $isExtended = str_starts_with($hex, '7979');
+            
+            if ($isExtended) {
+                // 79 79 [2 bytes Len] ... [2 bytes Stop]
+                if ($len < 6) return;
+                $pkgLen = hexdec(substr($hex, 4, 4)); 
+                $totalExpectedBytes = 2 + 2 + $pkgLen + 2;
+                $protocolOffset = 8;
+            } else {
+                // 78 78 [1 byte Len] ... [2 bytes Stop]
+                if ($len < 5) return;
+                $pkgLen = hexdec(substr($hex, 4, 2));
+                $totalExpectedBytes = 2 + 1 + $pkgLen + 2;
+                $protocolOffset = 6;
             }
 
             if ($len >= $totalExpectedBytes) {
-                // Determine STOP bytes check: 0D 0A
-                // $stop = substr($hex, ($totalExpectedBytes * 2) - 4, 4);
-                // if ($stop !== '0d0a') ...
-
-                // Extract full packet
                 $packet = substr($buffer, 0, $totalExpectedBytes);
-                
-                // Process this packet
-                $this->processGt06Packet($connection, $ctx, $packet);
-
-                // Remove packet from buffer
+                $this->processGt06Packet($connection, $ctx, $packet, $isExtended);
                 $ctx['buffer'] = substr($buffer, $totalExpectedBytes);
                 
-                // Recursively process remaining buffer
                 if (strlen($ctx['buffer']) > 0) {
                     $this->processBuffer($connection, $ctx);
                 }
             }
             return;
         }
-
-        // TEXT PROTOCOL FALLBACK (Ending with \n)
-        if (str_contains($buffer, "\n")) {
-             $lines = explode("\n", $buffer);
-             // Ensure we leave the last partial line in buffer if not empty
-             $last = array_pop($lines);
-             
-             foreach ($lines as $line) {
-                 $line = trim($line);
-                 if ($line) {
-                     $this->processTextPacket($connection, $ctx, $line);
-                 }
-             }
-             
-             // Put back remaining component
-             $ctx['buffer'] = $last;
-        }
+        // ... (remaining buffer processing)
     }
 
-    protected function processGt06Packet(ConnectionInterface $connection, array &$ctx, string $packet): void
+    protected function processGt06Packet(ConnectionInterface $connection, array &$ctx, string $packet, bool $isExtended = false): void
     {
         $hex = bin2hex($packet);
-        $protocolId = substr($hex, 6, 2);
+        $protocolOffset = $isExtended ? 8 : 6;
+        $protocolId = substr($hex, $protocolOffset, 2);
 
         switch ($protocolId) {
             case '01': // Login
-                // 78 78 0D 01 01 23 45 67 89 01 23 45 00 01 8C DD 0D 0A
-                // Terminal ID is 8 bytes starting at offset 4 (bytes) -> hex offset 8
-                $terminalIdHex = substr($hex, 8, 16);
-                
-                // Find Device
-                $device = Device::where('unique_id', $terminalIdHex)
-                                ->orWhere('imei', $terminalIdHex) // Simplified matching
+                // Terminal ID is 8 bytes. Offset 4 bytes in 7878, 5 bytes in 7979
+                $idOffset = $isExtended ? 10 : 8;
+                $terminalIdHex = substr($hex, $idOffset, 16);
+                $imeiCandidate = ltrim($terminalIdHex, '0');
+
+                // Find Device (Bypass Eloquent)
+                $deviceData = \Illuminate\Support\Facades\DB::table('devices')
+                                ->where('unique_id', $terminalIdHex)
+                                ->orWhere('imei', $terminalIdHex)
+                                ->orWhere('imei', $imeiCandidate)
+                                ->orWhere('unique_id', $imeiCandidate)
                                 ->first();
 
-                if ($device) {
-                    $ctx['device'] = $device;
-                    $device->update(['last_seen_at' => now(), 'status' => 'active']);
-                    $this->info("Login [GT06]: {$device->name} ({$terminalIdHex})");
-
-                    // Response: 78 78 05 01 [Serial(2)] [CRC(2)] 0D 0A
-                    // Serial is at end of content. 
-                    // Content len is PacketLen - 5 (Proto1 + Serial2 + CRC2) ? code based on fixed offsets
-                    // Serial is typically last 4 bytes before CRC? 
-                    // Let's grab Serial from input to reply. 
-                    // Standard: ... [Serial No (2 bytes)] [Error Check (2 bytes)] [Stop (2 bytes)]
-                    $serial = substr($hex, -8, 4); // 2 bytes serial
+                if ($deviceData) {
+                    $ctx['device_id'] = $deviceData->id;
+                    $ctx['device_name'] = $deviceData->name;
                     
-                    // Construct Reply
-                    $resp = "78780501" . $serial . "D9DC0D0A"; // Dummy CRC
+                    \Illuminate\Support\Facades\DB::table('devices')
+                        ->where('id', $deviceData->id)
+                        ->update(['last_seen_at' => now(), 'status' => 'active']);
+                        
+                    $this->info("Login [GT06" . ($isExtended ? "-Ex" : "") . "]: {$deviceData->name} ({$terminalIdHex})");
+
+                    // Standard Reply
+                    $serial = substr($hex, -8, 4); 
+                    $header = $isExtended ? "79790005" : "787805";
+                    $resp = $header . "01" . $serial . "D9DC0D0A"; 
                     $connection->write(hex2bin($resp));
                 } else {
                     $this->warn("Unknown Device Login: $terminalIdHex");
@@ -208,22 +184,70 @@ class GpsTcpServer extends Command
 
             case '12': // Location
             case '22':
-                if ($ctx['device']) {
-                    $ctx['device']->update(['last_seen_at' => now()]);
-                    // Process Location Data here...
-                    // $this->info("Ping from {$ctx['device']->name}");
+            case '94': // Info/Status often shared structure
+                if (isset($ctx['device_id'])) {
+                    // Generic GT06 Location Parsing (simplified offsets)
+                    $dataStart = $isExtended ? 10 : 8;
+                    
+                    if (strlen($hex) < ($dataStart + 30)) return;
+
+                    $latHex = substr($hex, $dataStart + 14, 8); 
+                    $lonHex = substr($hex, $dataStart + 22, 8); 
+                    $speedHex = substr($hex, $dataStart + 30, 2); 
+
+                    $lat = hexdec($latHex) / 1800000.0;
+                    $lon = hexdec($lonHex) / 1800000.0;
+                    $speed = hexdec($speedHex);
+
+                    if ($lat > 0 && $lon > 0) {
+                        \Illuminate\Support\Facades\DB::table('positions')->insert([
+                            'device_id' => $ctx['device_id'],
+                            'latitude' => $lat,
+                            'longitude' => $lon,
+                            'speed' => $speed,
+                            'fix_time' => now(),
+                            'protocol' => $isExtended ? 'GT06-EX' : 'GT06',
+                            'raw' => $hex,
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ]);
+                        
+                        \Illuminate\Support\Facades\DB::table('devices')
+                            ->where('id', $ctx['device_id'])
+                            ->update([
+                                'last_seen_at' => now(),
+                                'status' => 'active',
+                                'last_location_update' => now(),
+                                'latitude' => $lat,
+                                'longitude' => $lon,
+                                'speed' => $speed
+                            ]);
+                        
+                        $this->info("GPS [{$ctx['device_name']}]: {$lat}, {$lon}");
+                    }
                 }
                 break;
 
             case '13': // Heartbeat
-                if ($ctx['device']) {
-                    // Status info in packet...
-                    $ctx['device']->update(['last_seen_at' => now()]);
+                if (isset($ctx['device_id'])) {
+                    \Illuminate\Support\Facades\DB::table('devices')
+                        ->where('id', $ctx['device_id'])
+                        ->update(['last_seen_at' => now()]);
                     
                     $serial = substr($hex, -8, 4);
-                    // Reply: 78 78 05 13 [Serial] [CRC] 0D 0A
-                    $resp = "78780513" . $serial . "D9DC0D0A";
+                    $resp = ($isExtended ? "79790005" : "787805") . "13" . $serial . "D9DC0D0A";
                     $connection->write(hex2bin($resp));
+                }
+                break;
+            
+            case '22': // Alarm Data (often contains location too)
+                // Similar to 12 but different offsets. For now treat as Heartbeat to keep alive.
+                if ($ctx['device']) {
+                     $ctx['device']->update(['last_seen_at' => now()]);
+                     // Acknowledge
+                     $serial = substr($hex, -8, 4);
+                     $resp = "78780522" . $serial . "D9DC0D0A";
+                     $connection->write(hex2bin($resp));
                 }
                 break;
         }
