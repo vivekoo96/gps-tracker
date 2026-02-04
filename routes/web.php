@@ -19,19 +19,6 @@ Route::get('/', function () {
     return auth()->check() ? redirect()->route('dashboard') : redirect()->route('login');
 });
 
-Route::get('/debug-auth', function() {
-    if(!auth()->check()) return "Not logged in";
-    $user = auth()->user();
-    return [
-        'email' => $user->email,
-        'role_field' => $user->role,
-        'spatie_roles' => $user->getRoleNames(),
-        'permissions' => $user->getAllPermissions()->pluck('name'),
-        'is_super_admin' => $user->hasRole('super_admin'),
-        'can_view_zones' => $user->can('view_zones'),
-    ];
-})->middleware('auth');
-
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
@@ -91,24 +78,15 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__.'/auth.php';
 
-// Admin panel routes (System Admin Only)
-Route::middleware(['auth', 'role:admin|super_admin'])->prefix('admin')->as('admin.')->group(function () {
+// --------------------------------------------------------------------------
+// Admin Panel Group (Unified Prefix)
+// --------------------------------------------------------------------------
+Route::middleware(['auth', 'role:admin|super_admin|vendor_admin'])->prefix('admin')->as('admin.')->group(function () {
+    
+    // --- Dashboard & Home ---
     Route::get('/', [AdminController::class, 'index'])->name('dashboard');
 
-    // Role management (Strictly Admin/Super Admin)
-    Route::resource('roles', AdminRoleController::class);
-
-    // Assign roles to users (Strictly Admin/Super Admin)
-    Route::get('users/roles', [UserRoleController::class, 'index'])->name('users.roles.index');
-    Route::put('users/{user}/roles', [UserRoleController::class, 'update'])->name('users.roles.update');
-    
-    // Users management (Strictly Admin/Super Admin)
-    Route::resource('users', AdminUserController::class)->only(['index', 'store', 'update', 'destroy']);
-});
-
-// Fleet Management Routes (Accessible by Admin, Super Admin, and Vendor Admin)
-Route::middleware(['auth', 'role:admin|super_admin|vendor_admin'])->prefix('admin')->as('admin.')->group(function () {
-    // Master Management (Now accessible by Tenant Admins)
+    // --- Master Management (Accessible by All Admins) ---
     Route::resource('zones', \App\Http\Controllers\Admin\ZoneController::class);
     Route::resource('circles', \App\Http\Controllers\Admin\CircleController::class);
     Route::resource('wards', \App\Http\Controllers\Admin\WardController::class);
@@ -116,17 +94,12 @@ Route::middleware(['auth', 'role:admin|super_admin|vendor_admin'])->prefix('admi
     Route::resource('landmarks', \App\Http\Controllers\Admin\LandmarkController::class);
     Route::resource('routes', \App\Http\Controllers\Admin\RouteController::class);
 
-    // Device management routes
+    // --- Fleet & GPS Management (Accessible by All Admins) ---
     Route::resource('devices', DeviceController::class);
-    
-    // Geofence management routes
     Route::resource('geofences', GeofenceController::class);
     Route::get('geofences/{geofence}/events', [GeofenceController::class, 'events'])->name('geofences.events');
-
-    // Ticket Management
     Route::resource('tickets', \App\Http\Controllers\Admin\TicketController::class);
-
-    // Reports
+    
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('index');
         Route::get('/daily-distance', [\App\Http\Controllers\Admin\ReportController::class, 'dailyDistance'])->name('daily-distance');
@@ -138,13 +111,19 @@ Route::middleware(['auth', 'role:admin|super_admin|vendor_admin'])->prefix('admi
     Route::get('/ranking', [\App\Http\Controllers\Admin\RankingController::class, 'index'])->name('ranking.index');
     Route::get('/supervisor', [\App\Http\Controllers\Admin\SupervisorController::class, 'dashboard'])->name('supervisor.dashboard');
     
-    // GPS Tracking routes
     Route::prefix('gps')->name('gps.')->group(function () {
         Route::get('/dashboard', [App\Http\Controllers\Admin\GpsTrackingController::class, 'dashboard'])->name('dashboard');
         Route::get('/device/{device}/map', [App\Http\Controllers\Admin\GpsTrackingController::class, 'deviceMap'])->name('device-map');
         Route::get('/device/{device}/history', [App\Http\Controllers\Admin\GpsTrackingController::class, 'deviceHistory'])->name('device-history');
         Route::get('/live-data/{device?}', [App\Http\Controllers\Admin\GpsTrackingController::class, 'liveData'])->name('live-data');
-        Route::get('/add-test-data', [App\Http\Controllers\Admin\GpsTrackingController::class, 'addTestData'])->name('add-test-data');
+    });
+
+    // --- Restricted System Management (Super Admin & System Admin Only) ---
+    Route::middleware('role:admin|super_admin')->group(function() {
+        Route::resource('roles', AdminRoleController::class);
+        Route::get('users/roles', [UserRoleController::class, 'index'])->name('users.roles.index');
+        Route::put('users/{user}/roles', [UserRoleController::class, 'update'])->name('users.roles.update');
+        Route::resource('users', AdminUserController::class)->only(['index', 'store', 'update', 'destroy']);
     });
 });
 
