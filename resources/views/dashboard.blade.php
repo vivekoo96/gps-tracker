@@ -21,91 +21,97 @@
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <!-- Total Devices -->
-        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-xl border border-gray-200 dark:border-gray-700">
-            <div class="p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                            </svg>
+        <a href="{{ route('admin.devices.index') }}" class="block transform transition-transform hover:scale-105">
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-xl border border-gray-200 dark:border-gray-700 h-full">
+                <div class="p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Devices</p>
+                            <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100" data-stat="total_devices">{{ $stats['total_devices'] }}</p>
                         </div>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Devices</p>
-                        <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100" data-stat="total_devices">{{ $stats['total_devices'] }}</p>
-                    </div>
-                </div>
-                <div class="mt-4">
-                    <div class="flex items-center text-sm">
-                        @if($stats['device_growth_percentage'] >= 0)
-                            <span class="text-green-600 dark:text-green-400 font-medium">+{{ $stats['device_growth_percentage'] }}%</span>
-                        @else
-                            <span class="text-red-600 dark:text-red-400 font-medium">{{ $stats['device_growth_percentage'] }}%</span>
-                        @endif
-                        <span class="text-gray-500 dark:text-gray-400 ml-2">from last month</span>
+                    <div class="mt-4">
+                        <div class="flex items-center text-sm">
+                            @if($stats['device_growth_percentage'] >= 0)
+                                <span class="text-green-600 dark:text-green-400 font-medium">+{{ $stats['device_growth_percentage'] }}%</span>
+                            @else
+                                <span class="text-red-600 dark:text-red-400 font-medium">{{ $stats['device_growth_percentage'] }}%</span>
+                            @endif
+                            <span class="text-gray-500 dark:text-gray-400 ml-2">from last month</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </a>
 
         <!-- Active Devices -->
-        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-xl border border-gray-200 dark:border-gray-700">
-            <div class="p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
+        <a href="{{ route('admin.devices.index') }}" class="block transform transition-transform hover:scale-105">
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-xl border border-gray-200 dark:border-gray-700 h-full">
+                <div class="p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Active Devices</p>
+                            <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100" data-stat="online_devices">{{ $stats['online_devices'] }}</p>
                         </div>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Active Devices</p>
-                        <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100" data-stat="online_devices">{{ $stats['online_devices'] }}</p>
-                    </div>
-                </div>
-                <div class="mt-4">
-                    <div class="flex items-center text-sm">
-                        @if($stats['active_device_growth_percentage'] >= 0)
-                            <span class="text-green-600 dark:text-green-400 font-medium">+{{ $stats['active_device_growth_percentage'] }}%</span>
-                        @else
-                            <span class="text-red-600 dark:text-red-400 font-medium">{{ $stats['active_device_growth_percentage'] }}%</span>
-                        @endif
-                        <span class="text-gray-500 dark:text-gray-400 ml-2">from yesterday</span>
+                    <div class="mt-4">
+                        <div class="flex items-center text-sm">
+                            @if($stats['active_device_growth_percentage'] >= 0)
+                                <span class="text-green-600 dark:text-green-400 font-medium">+{{ $stats['active_device_growth_percentage'] }}%</span>
+                            @else
+                                <span class="text-red-600 dark:text-red-400 font-medium">{{ $stats['active_device_growth_percentage'] }}%</span>
+                            @endif
+                            <span class="text-gray-500 dark:text-gray-400 ml-2">from yesterday</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </a>
 
         <!-- Total Users -->
-        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-xl border border-gray-200 dark:border-gray-700">
-            <div class="p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
-                            </svg>
+        <a href="{{ route('admin.users.index') }}" class="block transform transition-transform hover:scale-105">
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-xl border border-gray-200 dark:border-gray-700 h-full">
+                <div class="p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Users</p>
+                            <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100" data-stat="total_users">{{ $stats['total_users'] }}</p>
                         </div>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Users</p>
-                        <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100" data-stat="total_users">{{ $stats['total_users'] }}</p>
-                    </div>
-                </div>
-                <div class="mt-4">
-                    <div class="flex items-center text-sm">
-                        @if($stats['user_growth_percentage'] >= 0)
-                            <span class="text-green-600 dark:text-green-400 font-medium">+{{ $stats['user_growth_percentage'] }}%</span>
-                        @else
-                            <span class="text-red-600 dark:text-red-400 font-medium">{{ $stats['user_growth_percentage'] }}%</span>
-                        @endif
-                        <span class="text-gray-500 dark:text-gray-400 ml-2">from last week</span>
+                    <div class="mt-4">
+                        <div class="flex items-center text-sm">
+                            @if($stats['user_growth_percentage'] >= 0)
+                                <span class="text-green-600 dark:text-green-400 font-medium">+{{ $stats['user_growth_percentage'] }}%</span>
+                            @else
+                                <span class="text-red-600 dark:text-red-400 font-medium">{{ $stats['user_growth_percentage'] }}%</span>
+                            @endif
+                            <span class="text-gray-500 dark:text-gray-400 ml-2">from last week</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </a>
 
         <!-- Alerts -->
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-xl border border-gray-200 dark:border-gray-700">
@@ -292,9 +298,87 @@
 
     @push('scripts')
     <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-            crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Device Status Chart
+            const ctx1 = document.getElementById('deviceStatusChart').getContext('2d');
+            new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Online', 'Offline', 'Moving', 'Low Battery'],
+                    datasets: [{
+                        data: [
+                            {{ $stats['online_devices'] }}, 
+                            {{ $stats['offline_devices'] }}, 
+                            {{ $stats['moving_devices'] }},
+                            {{ $stats['low_battery_devices'] }}
+                        ],
+                        backgroundColor: ['#10b981', '#ef4444', '#3b82f6', '#f59e0b'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: document.documentElement.classList.contains('dark') ? '#e5e7eb' : '#374151'
+                            }
+                        }
+                    },
+                    cutout: '70%',
+                }
+            });
+
+            // Alerts Chart (Mock data for visualization based on categories)
+            const ctx2 = document.getElementById('alertsChart').getContext('2d');
+            new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: ['Critical', 'Warning'],
+                    datasets: [{
+                        label: 'Active Alerts',
+                        data: [{{ $stats['critical_alerts'] }}, {{ $stats['warning_alerts'] }}],
+                        backgroundColor: ['#ef4444', '#f59e0b'],
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#e5e7eb'
+                            },
+                             ticks: {
+                                color: document.documentElement.classList.contains('dark') ? '#e5e7eb' : '#374151'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                             ticks: {
+                                color: document.documentElement.classList.contains('dark') ? '#e5e7eb' : '#374151'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        });
+    </script>
     
     <script>
         let map;
@@ -306,8 +390,11 @@
             map = L.map('map').setView([23.0225, 72.5714], 10); // Ahmedabad, India
             
             // Add tile layer
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
+            // Add tile layer (Uber-like minimalist style)
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 20
             }).addTo(map);
             
             // Add device markers
@@ -353,7 +440,7 @@
                     const popupContent = `
                         <div class="p-2">
                             <h4 class="font-semibold text-gray-900">
-                                <a href="/tracking/vehicle/${device.id}" class="text-indigo-600 hover:text-indigo-800 underline">
+                                <a href="/tracking/vehicle-details/${device.id}" class="text-indigo-600 hover:text-indigo-800 underline">
                                     ${device.name || 'Device #' + device.id}
                                 </a>
                             </h4>
@@ -365,7 +452,7 @@
                                 ''
                             }
                             <div class="mt-2">
-                                <a href="/tracking/vehicle/${device.id}" class="inline-flex items-center px-2 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700">
+                                <a href="/tracking/vehicle-details/${device.id}" class="inline-flex items-center px-2 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700">
                                     📊 View Details
                                 </a>
                             </div>
@@ -579,7 +666,7 @@
             const popupContent = `
                 <div class="p-2">
                     <h4 class="font-semibold text-gray-900">
-                        <a href="/tracking/vehicle/${device.id}" class="text-indigo-600 hover:text-indigo-800 underline">
+                        <a href="/tracking/vehicle-details/${device.id}" class="text-indigo-600 hover:text-indigo-800 underline">
                             ${device.name || 'Device #' + device.id}
                         </a>
                     </h4>
@@ -588,7 +675,7 @@
                     <p class="text-sm text-gray-600">Status: ${device.is_moving ? 'Moving' : 'Stationary'}</p>
                     <p class="text-xs text-gray-500">Last update: ${new Date(device.last_location_update).toLocaleString()}</p>
                     <div class="mt-2">
-                        <a href="/tracking/vehicle/${device.id}" class="inline-flex items-center px-2 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700">
+                        <a href="/tracking/vehicle-details/${device.id}" class="inline-flex items-center px-2 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700">
                             📊 View Details
                         </a>
                     </div>

@@ -20,38 +20,54 @@ class RoleController extends Controller
 
     public function create(): View
     {
-        return view('admin.roles.create');
+        $permissions = \Spatie\Permission\Models\Permission::all();
+        return view('admin.roles.create', compact('permissions'));
     }
 
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:50', 'unique:roles,name'],
+            'permissions' => ['array'],
         ]);
 
-        Role::create(['name' => $validated['name']]);
+        $role = Role::create(['name' => $validated['name']]);
+        
+        if ($request->has('permissions')) {
+            $role->syncPermissions($request->input('permissions'));
+        }
 
-        return redirect()->route('admin.roles.index')->with('status', 'Role created');
+        return redirect()->route('admin.roles.index')->with('status', 'Role created successfully');
     }
 
     public function edit(Role $role): View
     {
-        return view('admin.roles.edit', compact('role'));
+        $permissions = \Spatie\Permission\Models\Permission::all();
+        return view('admin.roles.edit', compact('role', 'permissions'));
     }
 
     public function update(Request $request, Role $role): RedirectResponse
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:50', Rule::unique('roles', 'name')->ignore($role->id)],
+            'permissions' => ['array'],
         ]);
 
         $role->update(['name' => $validated['name']]);
+        
+        if ($request->has('permissions')) {
+            $role->syncPermissions($request->input('permissions'));
+        }
 
-        return redirect()->route('admin.roles.index')->with('status', 'Role updated');
+        return redirect()->route('admin.roles.index')->with('status', 'Role updated successfully');
     }
 
     public function destroy(Role $role): RedirectResponse
     {
+        if ($role->name === 'super_admin') {
+            return back()->with('error', 'Cannot delete Super Admin role');
+        }
+        
         $role->delete();
         return redirect()->route('admin.roles.index')->with('status', 'Role deleted');
     }

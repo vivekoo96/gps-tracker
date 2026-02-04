@@ -14,11 +14,13 @@ class GpsTrackingController extends Controller
     {
         $devices = Device::with(['latestPosition'])->get();
         $totalDevices = $devices->count();
-        $onlineDevices = $devices->where('status', 'active')->count();
+        $totalDevices = $devices->count();
+        $onlineDevices = $devices->filter(fn($d) => $d->is_online)->count();
         $offlineDevices = $totalDevices - $onlineDevices;
         
         // Get recent GPS data for map
         $recentGpsData = Position::with('device')
+            ->has('device') // Only get positions with existing devices
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->where('fix_time', '>=', now()->subHours(24))
@@ -26,12 +28,17 @@ class GpsTrackingController extends Controller
             ->take(100)
             ->get();
 
+        $landmarks = \App\Models\Landmark::all();
+        $routes = \App\Models\Route::all();
+
         return view('admin.gps.dashboard', compact(
             'devices', 
             'totalDevices', 
             'onlineDevices', 
             'offlineDevices',
-            'recentGpsData'
+            'recentGpsData',
+            'landmarks',
+            'routes'
         ));
     }
 
@@ -92,38 +99,41 @@ class GpsTrackingController extends Controller
 
     public function addTestData()
     {
-        // Add some test GPS data for demonstration
-        $device = Device::first();
+        $devices = Device::all();
         
-        if (!$device) {
+        if ($devices->isEmpty()) {
             return redirect()->back()->with('error', 'No devices found. Please create a device first.');
         }
 
-        // Generate test GPS data around Ahmedabad, India
-        $baseLatitude = 23.0225;
-        $baseLongitude = 72.5714;
+        // Generate test GPS data around Hyderabad, India (GHMC Area)
+        $baseLatitude = 17.3850;
+        $baseLongitude = 78.4867;
         
-        for ($i = 0; $i < 10; $i++) {
-            Position::create([
-                'device_id' => $device->id,
-                'latitude' => $baseLatitude + (rand(-100, 100) / 10000),
-                'longitude' => $baseLongitude + (rand(-100, 100) / 10000),
-                'speed' => rand(0, 80),
-                'course' => rand(0, 360),
-                'altitude' => rand(50, 200),
-                'satellites' => rand(4, 12),
-                'attributes' => json_encode(['battery_level' => rand(20, 100), 'signal_strength' => rand(1, 5)]),
-                'fix_time' => now()->subMinutes(rand(1, 60)),
-                'raw' => 'test_data_' . $i
+        foreach ($devices as $device) {
+            // Create a few recent positions for each device
+            for ($i = 0; $i < 5; $i++) {
+                Position::create([
+                    'device_id' => $device->id,
+                    'latitude' => $baseLatitude + (rand(-50, 50) / 1000),
+                    'longitude' => $baseLongitude + (rand(-50, 50) / 1000),
+                    'speed' => rand(0, 80),
+                    'course' => rand(0, 360),
+                    'altitude' => rand(50, 200),
+                    'satellites' => rand(4, 12),
+                    'attributes' => json_encode(['battery_level' => rand(20, 100), 'signal_strength' => rand(1, 5)]),
+                    'fix_time' => now()->subMinutes(rand(0, 30)),
+                    'raw' => 'test_data_hyd_' . $device->id . '_' . $i
+                ]);
+            }
+
+            // Update device status
+            $device->update([
+                'last_seen_at' => now(),
+                'last_location_update' => now(),
+                'status' => 'active'
             ]);
         }
 
-        // Update device last seen
-        $device->update([
-            'last_seen_at' => now(),
-            'status' => 'active'
-        ]);
-
-        return redirect()->route('admin.gps.dashboard')->with('success', 'Test GPS data added successfully!');
+        return redirect()->route('admin.gps.dashboard')->with('success', 'Hyderabad GPS data synced for all devices successfully!');
     }
 }

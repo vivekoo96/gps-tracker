@@ -206,6 +206,86 @@
                     </div>
                 </div>
 
+                <!-- GHMC Operational Details Card -->
+                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-xl border border-gray-200 dark:border-gray-700 mb-6">
+                    <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <div class="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">GHMC Operational Details</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Assign vehicle, driver, and administrative area</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Vehicle No & Type -->
+                            <div>
+                                <label for="vehicle_no" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Vehicle Number</label>
+                                <input type="text" id="vehicle_no" name="vehicle_no" value="{{ old('vehicle_no', $device->vehicle_no) }}" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="vehicle_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Vehicle Type</label>
+                                <input type="text" id="vehicle_type" name="vehicle_type" value="{{ old('vehicle_type', $device->vehicle_type) }}" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            </div>
+
+                            <!-- Driver Info -->
+                            <div>
+                                <label for="driver_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Driver Name</label>
+                                <input type="text" id="driver_name" name="driver_name" value="{{ old('driver_name', $device->driver_name) }}" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="driver_contact" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Driver Contact</label>
+                                <input type="text" id="driver_contact" name="driver_contact" value="{{ old('driver_contact', $device->driver_contact) }}" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            </div>
+
+                            <!-- Administrative Hierarchy -->
+                            <div>
+                                <label for="zone_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Zone</label>
+                                <select id="zone_id" name="zone_id" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    <option value="">Select Zone</option>
+                                    @foreach($zones as $zone)
+                                        <option value="{{ $zone->id }}" {{ old('zone_id', $device->zone_id) == $zone->id ? 'selected' : '' }}>{{ $zone->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label for="circle_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Circle</label>
+                                <select id="circle_id" name="circle_id" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    <option value="">Select Circle</option>
+                                    @foreach($circles as $circle)
+                                        <option value="{{ $circle->id }}" {{ old('circle_id', $device->circle_id) == $circle->id ? 'selected' : '' }}>{{ $circle->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label for="ward_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Ward</label>
+                                <select id="ward_id" name="ward_id" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    <option value="">Select Ward</option>
+                                    @foreach($wards as $ward)
+                                        <option value="{{ $ward->id }}" {{ old('ward_id', $device->ward_id) == $ward->id ? 'selected' : '' }}>{{ $ward->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label for="transfer_station_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Transfer Station</label>
+                                <select id="transfer_station_id" name="transfer_station_id" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    <option value="">Select Station</option>
+                                    @foreach($transferStations as $station)
+                                        <option value="{{ $station->id }}" {{ old('transfer_station_id', $device->transfer_station_id) == $station->id ? 'selected' : '' }}>{{ $station->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Action Buttons -->
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-xl border border-gray-200 dark:border-gray-700">
                     <div class="p-6">

@@ -45,11 +45,20 @@ class GpsDataController extends Controller
                 return response()->json(['error' => 'Device not found or unauthorized'], 401);
             }
 
+            // Secure API Check (Phase 4)
+            $token = $request->header('X-Device-Token');
+            if ($token && $device->api_secret && $token !== $device->api_secret) {
+                return response()->json(['error' => 'Invalid Device Token'], 401);
+            }
+
             // Store position data
             $position = $this->storePosition($device, $gpsData);
             
             // Update device status
             $this->updateDeviceStatus($device, $gpsData);
+
+            // Process peripherals (Fuel, Dashcam)
+            $this->processPeripheralData($device, $gpsData);
 
             // Trigger real-time update (you can use events here for WebSockets)
             Log::info('GPS Data Processed - Real-time update triggered', [
@@ -206,7 +215,8 @@ class GpsDataController extends Controller
             }
         }
 
-        return [
+        // Base standard keys
+        $parsed = [
             'device_id' => $data['device_id'],
             'latitude' => (float) $data['latitude'],
             'longitude' => (float) $data['longitude'],
@@ -218,6 +228,10 @@ class GpsDataController extends Controller
             'timestamp' => isset($data['timestamp']) ? Carbon::parse($data['timestamp']) : now(),
             'ignition' => isset($data['ignition']) ? (bool) $data['ignition'] : null,
         ];
+
+        // Merge with original data to keep custom keys (like adc1, dashcam_status)
+        // We prioritize parsed values but keep everything else
+        return array_merge($data, $parsed);
     }
 
     /**
@@ -431,6 +445,97 @@ class GpsDataController extends Controller
         }
 
         $device->update($updateData);
+    }
+
+    /**
+     * Process peripheral data (Fuel, Dashcam)
+     */
+    private function processPeripheralData(Device $device, array $gpsData): void
+    {
+        // 1. Process Fuel Sensor
+        if ($device->fuelSensor) {
+            $fuelSensor = $device->fuelSensor;
+            
+            // Get the configured data source key (default to 'adc1')
+            $sourceKey = $fuelSensor->data_source ?? 'adc1';
+            
+            // Look for the specific key in data, or fallbacks if not found
+            $rawValue = $gpsData[$sourceKey] ?? null;
+            
+            // Fallback for common keys if specific one not found and default was used
+            if ($rawValue === null && $sourceKey === 'adc1') {
+                $rawValue = $gpsData['fuel'] ?? $gpsData['fuel_level'] ?? $gpsData['ai1'] ?? null;
+            }
+            
+            if ($rawValue !== null) {
+                $liters = $this->calculateFuelLiters($rawValue, $fuelSensor->calibration_data);
+                
+                $fuelSensor->update([
+                    'current_level' => $liters,
+                    'status' => 'active'
+                ]);
+            }
+        }
+
+        // 2. Process Dashcam
+        if ($device->dashcam) {
+            $dashcam = $device->dashcam;
+            
+            // Look for dashcam status keys
+            $camStatus = $gpsData['dashcam_status'] ?? $gpsData['dvr_status'] ?? null;
+            
+            if ($camStatus) {
+                // strict mapping or just save passing value
+                $statusMap = [
+                    '1' => 'online', '0' => 'offline', 
+                    'rec' => 'recording', 'error' => 'error'
+                ];
+                
+                $dashcam->update([
+                    'status' => $statusMap[$camStatus] ?? 'online' // Default to online if we get a signal
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Calculate fuel liters based on calibration data using Linear Interpolation
+     */
+    private function calculateFuelLiters($rawValue, $calibrationData): float
+    {
+        if (empty($calibrationData) || !is_array($calibrationData)) {
+            // No calibration? Return raw or percentage if within common range
+            return (float) $rawValue;
+        }
+
+        // Sort calibration points by key (sensor value)
+        ksort($calibrationData);
+        
+        $points = [];
+        foreach ($calibrationData as $sensorVal => $liters) {
+            $points[] = ['x' => (float)$sensorVal, 'y' => (float)$liters];
+        }
+
+        $count = count($points);
+        if ($count < 2) return (float) $rawValue; // Need at least 2 points
+
+        // Check bounds
+        if ($rawValue <= $points[0]['x']) return $points[0]['y'];
+        if ($rawValue >= $points[$count - 1]['x']) return $points[$count - 1]['y'];
+
+        // Find the segment the rawValue falls into
+        for ($i = 0; $i < $count - 1; $i++) {
+            $p1 = $points[$i];
+            $p2 = $points[$i + 1];
+
+            if ($rawValue >= $p1['x'] && $rawValue <= $p2['x']) {
+                // Linear Interpolation Formula: y = y1 + (x - x1) * (y2 - y1) / (x2 - x1)
+                $slope = ($p2['y'] - $p1['y']) / ($p2['x'] - $p1['x']);
+                return round($p1['y'] + ($rawValue - $p1['x']) * $slope, 2);
+            }
+        }
+
+        return 0;
     }
 
     /**

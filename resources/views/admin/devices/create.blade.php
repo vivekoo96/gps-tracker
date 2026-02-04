@@ -79,18 +79,31 @@
                                 </div>
 
                                 <div>
-                                    <label for="device_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <label for="device_category" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Device Category <span class="text-red-500">*</span>
+                                    </label>
+                                    <select id="device_category" name="device_category" 
+                                            class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition duration-150 ease-in-out" 
+                                            required>
+                                        <option value="gps" {{ old('device_category') == 'gps' ? 'selected' : '' }}>GPS Tracker</option>
+                                        <option value="fuel" {{ old('device_category') == 'fuel' ? 'selected' : '' }}>Fuel Sensor</option>
+                                        <option value="dashcam" {{ old('device_category') == 'dashcam' ? 'selected' : '' }}>Dashcam</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label for="device_model" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         Device Model <span class="text-red-500">*</span>
                                     </label>
-                                <select id="device_type" name="device_type" 
+                                <select id="device_model" name="device_model" 
                                         class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition duration-150 ease-in-out" 
                                         onchange="updateServerAddress()" 
                                         required>
                                     <option value="">Select device model</option>
                                     
                                     <!-- GPS Trackers - All configured for YOUR server -->
-                                    <option value="GT800" data-server="{{ request()->getHost() }}:5023" {{ old('device_type') == 'GT800' ? 'selected' : '' }}>GT800 - Advanced GPS Tracker</option>
-                                    <option value="WanWay EV02" data-server="{{ request()->getHost() }}:5023" {{ old('device_type') == 'WanWay EV02' ? 'selected' : '' }}>WanWay EV02 - Electric Vehicle Tracker</option>
+                                    <option value="GT800" data-server="{{ request()->getHost() }}:5023" {{ old('device_model') == 'GT800' ? 'selected' : '' }}>GT800 - Advanced GPS Tracker</option>
+                                    <option value="WanWay EV02" data-server="{{ request()->getHost() }}:5023" {{ old('device_model') == 'WanWay EV02' ? 'selected' : '' }}>WanWay EV02 - Electric Vehicle Tracker</option>
                                     <option value="Concox GT06N" data-server="{{ request()->getHost() }}:5023" {{ old('device_type') == 'Concox GT06N' ? 'selected' : '' }}>Concox GT06N - Basic GPS Tracker</option>
                                     
                                     <!-- TK Series Devices (Port 8082) -->
@@ -212,6 +225,86 @@
                                         <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GHMC Operational Details Card -->
+                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-xl border border-gray-200 dark:border-gray-700 mb-6">
+                    <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <div class="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">GHMC Operational Details</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Assign vehicle, driver, and administrative area</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Vehicle No & Type -->
+                            <div>
+                                <label for="vehicle_no" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Vehicle Number</label>
+                                <input type="text" id="vehicle_no" name="vehicle_no" value="{{ old('vehicle_no') }}" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="vehicle_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Vehicle Type</label>
+                                <input type="text" id="vehicle_type" name="vehicle_type" value="{{ old('vehicle_type') }}" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            </div>
+
+                            <!-- Driver Info -->
+                            <div>
+                                <label for="driver_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Driver Name</label>
+                                <input type="text" id="driver_name" name="driver_name" value="{{ old('driver_name') }}" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="driver_contact" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Driver Contact</label>
+                                <input type="text" id="driver_contact" name="driver_contact" value="{{ old('driver_contact') }}" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            </div>
+
+                            <!-- Administrative Hierarchy -->
+                            <div>
+                                <label for="zone_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Zone</label>
+                                <select id="zone_id" name="zone_id" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    <option value="">Select Zone</option>
+                                    @foreach($zones as $zone)
+                                        <option value="{{ $zone->id }}" {{ old('zone_id') == $zone->id ? 'selected' : '' }}>{{ $zone->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label for="circle_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Circle</label>
+                                <select id="circle_id" name="circle_id" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    <option value="">Select Circle</option>
+                                    @foreach($circles as $circle)
+                                        <option value="{{ $circle->id }}" {{ old('circle_id') == $circle->id ? 'selected' : '' }}>{{ $circle->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label for="ward_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Ward</label>
+                                <select id="ward_id" name="ward_id" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    <option value="">Select Ward</option>
+                                    @foreach($wards as $ward)
+                                        <option value="{{ $ward->id }}" {{ old('ward_id') == $ward->id ? 'selected' : '' }}>{{ $ward->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label for="transfer_station_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Transfer Station</label>
+                                <select id="transfer_station_id" name="transfer_station_id" class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    <option value="">Select Station</option>
+                                    @foreach($transferStations as $station)
+                                        <option value="{{ $station->id }}" {{ old('transfer_station_id') == $station->id ? 'selected' : '' }}>{{ $station->name }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -451,17 +544,74 @@
             }
         }
 
+        // Device Models Data
+        const deviceModels = {
+            'gps': ['GT06', 'TK103', 'TK102', 'H02', 'GT800', 'MT100', 'Teltonika FMB920', 'Concox'],
+            'fuel': ['Omnicomm LLS 5', 'Italon', 'Epsilon ES', 'Technoton DUT-E', 'Generic Analog'],
+            'dashcam': ['JC400', 'Streamax X3', 'Recoda', 'Thinkware', 'BlackVue', 'Generic DVR']
+        };
+
+        // DOM Elements
+        const categorySelect = document.getElementById('device_category');
+        const modelSelect = document.getElementById('device_model');
+        const nameField = document.getElementById('name');
+        const unitTypeField = document.getElementById('unit_type');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Populate models if category is already selected (e.g. old input)
+            if (categorySelect.value) {
+                updateModelOptions(categorySelect.value, '{{ old('device_model') }}');
+            }
+        });
+
+        // Event Listener for Category Change
+        categorySelect.addEventListener('change', function() {
+            updateModelOptions(this.value);
+            generateDeviceName();
+        });
+
+        unitTypeField.addEventListener('change', generateDeviceName);
+
+        function updateModelOptions(category, selectedModel = null) {
+            // Clear existing options
+            modelSelect.innerHTML = '<option value="">Select device model</option>';
+
+            if (category && deviceModels[category]) {
+                deviceModels[category].forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model;
+                    option.textContent = model;
+                    if (selectedModel && selectedModel === model) {
+                        option.selected = true;
+                    }
+                    modelSelect.appendChild(option);
+                });
+            }
+        }
+
+        function generateDeviceName() {
+            const category = categorySelect.value;
+            const unitType = unitTypeField.value;
+            
+            if (category && unitType && !nameField.value) {
+                const timestamp = new Date().getTime().toString().slice(-4);
+                // e.g. GPS-TRUCK-1234
+                nameField.value = `${category.toUpperCase()}-${unitType.toUpperCase()}-${timestamp}`;
+            }
+        }
+
         // Form validation
         document.getElementById('device-form').addEventListener('submit', function(e) {
-            const requiredFields = ['name', 'unit_type', 'device_type', 'unique_id', 'creator', 'status'];
+            const requiredFields = ['name', 'unit_type', 'device_category', 'device_model', 'unique_id', 'creator'];
             let isValid = true;
             
             requiredFields.forEach(function(fieldName) {
                 const field = document.getElementById(fieldName);
-                if (!field.value.trim()) {
+                if (field && !field.value.trim()) {
                     isValid = false;
                     field.classList.add('border-red-500');
-                } else {
+                } else if (field) {
                     field.classList.remove('border-red-500');
                 }
             });
@@ -469,35 +619,6 @@
             if (!isValid) {
                 e.preventDefault();
                 alert('Please fill in all required fields.');
-            }
-        });
-
-        // Update server address based on device type
-        function updateServerAddress() {
-            const deviceSelect = document.getElementById('device_type');
-            const selectedOption = deviceSelect.options[deviceSelect.selectedIndex];
-            const serverAddress = selectedOption.getAttribute('data-server');
-            const serverInput = document.getElementById('server_address');
-            const serverDisplay = document.getElementById('server-display');
-            
-            if (serverAddress) {
-                serverInput.value = serverAddress;
-                serverDisplay.textContent = serverAddress;
-            } else {
-                serverInput.value = '';
-                serverDisplay.textContent = 'Select a device first';
-            }
-        }
-
-        // Auto-generate device name based on type and unit type
-        document.getElementById('device_type').addEventListener('change', function() {
-            const deviceType = this.value;
-            const unitType = document.getElementById('unit_type').value;
-            const nameField = document.getElementById('name');
-            
-            if (deviceType && unitType && !nameField.value) {
-                const timestamp = new Date().getTime().toString().slice(-4);
-                nameField.value = `${deviceType}-${unitType.toUpperCase()}-${timestamp}`;
             }
         });
     </script>

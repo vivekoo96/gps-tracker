@@ -12,6 +12,7 @@
         "php": "^8.2",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
+        "razorpay/razorpay": "^2.9",
         "react/datagram": "^1.10",
         "react/socket": "^1.16",
         "react/stream": "^1.4",
@@ -33,7 +34,10 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-        }
+        },
+        "files": [
+            "app/Helpers/SettingsHelper.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
@@ -77,6 +81,11 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
+        },
+        "audit": {
+            "ignore": [
+                "PKSA-4s4z-t146-6123"
+            ]
         }
     },
     "minimum-stability": "stable",

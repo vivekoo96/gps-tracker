@@ -28,20 +28,13 @@ Route::post('/gps/data', [GpsDataController::class, 'receiveData'])->name('gps.r
 Route::get('/gps/data', [GpsDataController::class, 'receiveData'])->name('gps.receive.get');
 Route::any('/gps/{deviceId}', [GpsDataController::class, 'receiveData'])->name('gps.device.receive');
 
-// Test GPS Routes (simplified for debugging)
-Route::any('/gps/test', [TestGpsController::class, 'receiveTestData'])->name('gps.test');
-Route::get('/gps/health', [TestGpsController::class, 'healthCheck'])->name('gps.health');
-Route::get('/gps/test-data', [TestGpsController::class, 'getTestData'])->name('gps.test.data');
+// Test routes removed for production
+// Route::any('/gps/test', [TestGpsController::class, 'receiveTestData'])->name('gps.test');
+// Route::get('/gps/health', [TestGpsController::class, 'healthCheck'])->name('gps.health');
+// Route::get('/gps/test-data', [TestGpsController::class, 'getTestData'])->name('gps.test.data');
 
-// Simple debug route
-Route::get('/debug/test', function() {
-    return response()->json([
-        'status' => 'working',
-        'message' => 'Debug endpoint is working',
-        'timestamp' => now()->toISOString(),
-        'routes_working' => true
-    ]);
-})->name('debug.test');
+// Simple debug route removed
+// Route::get('/debug/test', function() { ... });
 
 // High-Traffic GPS Routes (for production with high load)
 Route::post('/gps/high-traffic', [HighTrafficGpsController::class, 'receiveData'])->name('gps.high.traffic');
@@ -56,7 +49,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/tracking/live', [TrackingController::class, 'liveTracking'])->name('tracking.live');
     Route::get('/tracking/reports', [TrackingController::class, 'reports'])->name('tracking.reports');
     Route::get('/tracking/history', [TrackingController::class, 'history'])->name('tracking.history');
-    Route::get('/tracking/vehicle/{device}', [TrackingController::class, 'vehicleDetails'])->name('tracking.vehicle-details');
+    Route::get('/tracking/vehicle-details/{device}', [TrackingController::class, 'vehicleDetails'])->name('tracking.vehicle-details');
     
     // Device setup and testing
     Route::get('/device-setup', function () {
@@ -85,23 +78,52 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__.'/auth.php';
 
-// Admin panel routes
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->as('admin.')->group(function () {
+// Admin panel routes (System Admin Only)
+Route::middleware(['auth', 'role:admin|super_admin'])->prefix('admin')->as('admin.')->group(function () {
     Route::get('/', [AdminController::class, 'index'])->name('dashboard');
 
-    // Role management
+    // Role management (Strictly Admin/Super Admin)
     Route::resource('roles', AdminRoleController::class);
 
-    // Assign roles to users
+    // Assign roles to users (Strictly Admin/Super Admin)
     Route::get('users/roles', [UserRoleController::class, 'index'])->name('users.roles.index');
     Route::put('users/{user}/roles', [UserRoleController::class, 'update'])->name('users.roles.update');
+    
+    // Users management (Strictly Admin/Super Admin)
+    Route::resource('users', AdminUserController::class)->only(['index', 'store', 'update', 'destroy']);
 
+    // Master Management
+    Route::resource('zones', \App\Http\Controllers\Admin\ZoneController::class);
+    Route::resource('circles', \App\Http\Controllers\Admin\CircleController::class);
+    Route::resource('wards', \App\Http\Controllers\Admin\WardController::class);
+    Route::resource('transfer-stations', \App\Http\Controllers\Admin\TransferStationController::class);
+    Route::resource('landmarks', \App\Http\Controllers\Admin\LandmarkController::class);
+    Route::resource('routes', \App\Http\Controllers\Admin\RouteController::class);
+});
+
+// Fleet Management Routes (Accessible by Admin, Super Admin, and Vendor Admin)
+Route::middleware(['auth', 'role:admin|super_admin|vendor_admin'])->prefix('admin')->as('admin.')->group(function () {
     // Device management routes
     Route::resource('devices', DeviceController::class);
     
     // Geofence management routes
     Route::resource('geofences', GeofenceController::class);
     Route::get('geofences/{geofence}/events', [GeofenceController::class, 'events'])->name('geofences.events');
+
+    // Ticket Management
+    Route::resource('tickets', \App\Http\Controllers\Admin\TicketController::class);
+
+    // Reports
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('index');
+        Route::get('/daily-distance', [\App\Http\Controllers\Admin\ReportController::class, 'dailyDistance'])->name('daily-distance');
+        Route::get('/trips', [\App\Http\Controllers\Admin\ReportController::class, 'trips'])->name('trips');
+        Route::get('/geofences', [\App\Http\Controllers\Admin\ReportController::class, 'geofences'])->name('geofences');
+        Route::get('/engine-utilization', [\App\Http\Controllers\Admin\ReportController::class, 'engineUtilization'])->name('engine-utilization');
+    });
+    
+    Route::get('/ranking', [\App\Http\Controllers\Admin\RankingController::class, 'index'])->name('ranking.index');
+    Route::get('/supervisor', [\App\Http\Controllers\Admin\SupervisorController::class, 'dashboard'])->name('supervisor.dashboard');
     
     // GPS Tracking routes
     Route::prefix('gps')->name('gps.')->group(function () {
@@ -111,7 +133,30 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->as('admin.')->group(
         Route::get('/live-data/{device?}', [App\Http\Controllers\Admin\GpsTrackingController::class, 'liveData'])->name('live-data');
         Route::get('/add-test-data', [App\Http\Controllers\Admin\GpsTrackingController::class, 'addTestData'])->name('add-test-data');
     });
+});
 
-    // Users management (Tailwind-based)
-    Route::resource('users', AdminUserController::class)->only(['index', 'store', 'update', 'destroy']);
+// Super Admin Routes
+Route::middleware(['auth', 'role:super_admin'])->prefix('super-admin')->as('super_admin.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\SuperAdmin\DashboardController::class, 'index'])->name('dashboard');
+    Route::resource('vendors', \App\Http\Controllers\SuperAdmin\VendorController::class);
+    
+    // Global Settings
+    Route::get('/settings', [\App\Http\Controllers\SuperAdmin\SettingController::class, 'index'])->name('settings.index');
+    Route::post('/settings', [\App\Http\Controllers\SuperAdmin\SettingController::class, 'update'])->name('settings.update');
+});
+
+// Vendor Routes
+Route::middleware(['auth', 'role:vendor_admin|super_admin|admin'])->prefix('vendor')->as('vendor.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Vendor\DashboardController::class, 'index'])->name('dashboard');
+    
+    // Subscription Management
+    Route::get('/subscription', [\App\Http\Controllers\Vendor\SubscriptionController::class, 'index'])->name('subscription.index');
+    Route::post('/subscription/upgrade', [\App\Http\Controllers\Vendor\SubscriptionController::class, 'upgrade'])->name('subscription.upgrade');
+    Route::post('/subscription/verify', [\App\Http\Controllers\Vendor\SubscriptionController::class, 'verify'])->name('subscription.verify');
+
+    // Fuel Sensors
+    Route::resource('fuel', \App\Http\Controllers\Vendor\FuelSensorController::class);
+
+    // Dashcams
+    Route::resource('dashcam', \App\Http\Controllers\Vendor\DashcamController::class);
 });

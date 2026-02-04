@@ -120,10 +120,11 @@
             // Initialize the map
             var map = L.map('map').setView([23.0225, 72.5714], 12); // Center on Ahmedabad
 
-            // Add OpenStreetMap tiles
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                maxZoom: 19
+            // Add CartoDB Voyager tiles (Uber-like)
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 20
             }).addTo(map);
 
             // Device data from PHP
@@ -147,9 +148,42 @@
             // Add device markers to the map
             devices.forEach(function(device) {
                 if (device.lat && device.lng) {
-                    var icon = device.status === 'online' ? onlineIcon : offlineIcon;
+                    // Create custom car icon
+                    var iconColor = '#ef4444'; // Default Red (Offline)
                     
-                    var marker = L.marker([device.lat, device.lng], { icon: icon }).addTo(map);
+                    if (device.status === 'online') {
+                         if (device.speed > 0) {
+                            iconColor = '#10b981'; // Green (Moving)
+                        } else {
+                            iconColor = '#3b82f6'; // Blue (Stopped)
+                        }
+                    }
+                    
+                    var rotation = device.heading || 0;
+                    
+                    // Top-down car SVG (Navigation Arrow Style)
+                    var iconHtml = `
+                        <div style="
+                            transform: rotate(${rotation}deg);
+                            transform-origin: center;
+                            filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.3));
+                        ">
+                            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="20" cy="20" r="18" fill="white" fill-opacity="0.9"/>
+                                <path d="M20 6L32 30L20 24L8 30L20 6Z" fill="${iconColor}"/>
+                            </svg>
+                        </div>
+                    `;
+                    
+                    var customIcon = L.divIcon({
+                        className: 'custom-car-icon',
+                        html: iconHtml,
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 20],
+                        popupAnchor: [0, -20]
+                    });
+                    
+                    var marker = L.marker([device.lat, device.lng], { icon: customIcon }).addTo(map);
                     
                     // Create popup content
                     var popupContent = `
@@ -209,8 +243,8 @@
                             }
                         });
                         
-                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+                            attribution: 'Tiles &copy; Esri',
                             maxZoom: 19
                         }).addTo(map);
                         

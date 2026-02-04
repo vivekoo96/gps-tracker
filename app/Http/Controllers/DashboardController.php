@@ -8,11 +8,21 @@ use App\Models\Position;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Auth;
 
+use Illuminate\Http\RedirectResponse;
+
 class DashboardController extends Controller
 {
-    public function index(): View
+    public function index(): View|RedirectResponse
     {
         $user = Auth::user();
+
+        // Redirect based on role
+        if ($user->hasRole('vendor_admin')) {
+            return redirect()->route('vendor.dashboard');
+        }
+        if ($user->hasRole('super_admin')) {
+            return redirect()->route('super_admin.dashboard');
+        }
         
         // Get user's devices (if user has specific devices assigned)
         // For now, we'll show all devices for simplicity, but you can filter by user later

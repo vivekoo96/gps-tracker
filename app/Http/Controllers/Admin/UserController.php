@@ -23,6 +23,15 @@ class UserController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        // Enforce Subscription Limits for Vendors
+        $user = auth()->user();
+        if ($user->vendor_id && !$user->isSuperAdmin()) {
+            $subscriptionService = app(\App\Services\SubscriptionService::class);
+            if (!$subscriptionService->canCreateUser($user->vendor)) {
+                return back()->withInput()->withErrors(['limit' => 'You have reached the maximum number of users allowed by your subscription plan.']);
+            }
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique('users', 'email')],

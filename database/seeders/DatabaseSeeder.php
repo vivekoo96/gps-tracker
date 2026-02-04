@@ -15,29 +15,42 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $adminRole = Role::firstOrCreate(['name' => 'admin']);
-        $userRole = Role::firstOrCreate(['name' => 'user']);
+        // 1. Run Core Seeders
+        $this->call([
+            PermissionSeeder::class,
+            SaaSSeeder::class,
+        ]);
 
+        $adminRole = Role::where('name', 'super_admin')->first();
+        $userRole = Role::where('name', 'user')->first();
+
+        // 2. Main Super Admin
         $admin = User::firstOrCreate(
             ['email' => 'admin@example.com'],
             [
                 'name' => 'Administrator',
                 'password' => Hash::make('password'),
+                'role' => 'super_admin',
             ]
         );
         $admin->assignRole($adminRole);
+        $admin->role = 'super_admin';
+        $admin->save();
 
-        // Optionally a demo user
+        // 3. Demo User (Scoped to no vendor, will see nothing by default)
         $demo = User::firstOrCreate(
             ['email' => 'user@example.com'],
             [
                 'name' => 'Demo User',
                 'password' => Hash::make('password'),
+                'role' => 'user',
             ]
         );
         $demo->assignRole($userRole);
+        $demo->role = 'user';
+        $demo->save();
 
-        // Seed devices and GPS data
+        // 4. Seed devices and GPS data
         $this->call([
             DeviceSeeder::class,
             GpsDataSeeder::class,

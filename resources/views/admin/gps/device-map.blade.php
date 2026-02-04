@@ -237,9 +237,9 @@
     // Initialize map
     let deviceMap = L.map('deviceMap').setView([23.0225, 72.5714], 13);
 
-    // Add tile layer with dark mode support
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
+    // Add Esri WorldStreetMap tiles
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri',
         maxZoom: 19
     }).addTo(deviceMap);
 
@@ -284,13 +284,35 @@
             if (trackPoints.length > 1) {
                 const endPoint = trackPoints[trackPoints.length - 1];
                 const endData = gpsTrack[gpsTrack.length - 1];
+                
+                // Vehicle Icon for Current Position
+                const iconColor = '#ef4444'; // Red for current position
+                const rotation = endData.heading || 0;
+                
+                // Modern Navigation Arrow
+                const iconHtml = `
+                    <div style="
+                        transform: rotate(${rotation}deg);
+                        transform-origin: center;
+                        filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.3));
+                    ">
+                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="20" cy="20" r="18" fill="white" fill-opacity="0.9"/>
+                            <path d="M20 6L32 30L20 24L8 30L20 6Z" fill="${iconColor}"/>
+                        </svg>
+                    </div>
+                `;
+                
+                const customIcon = L.divIcon({
+                    html: iconHtml,
+                    iconSize: [40, 40],
+                    iconAnchor: [20, 20],
+                    popupAnchor: [0, -20],
+                    className: 'custom-car-icon'
+                });
+
                 L.marker(endPoint, {
-                    icon: L.divIcon({
-                        className: 'custom-marker',
-                        html: '<div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>',
-                        iconSize: [24, 24],
-                        iconAnchor: [12, 12]
-                    })
+                    icon: customIcon
                 }).addTo(deviceMap).bindPopup(`
                     <div class="p-3">
                         <h4 class="font-bold text-red-600 mb-2 flex items-center">

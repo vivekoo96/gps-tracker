@@ -22,7 +22,7 @@ class TrackingController extends Controller
             return [
                 'id' => $device->id,
                 'name' => $device->name ?? 'Device-' . $device->id,
-                'status' => $device->status_display,
+                'status' => $device->is_online ? 'online' : 'offline',
                 'lat' => $device->latitude,
                 'lng' => $device->longitude,
                 'speed' => $device->speed ?? 0,

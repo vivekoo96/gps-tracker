@@ -17,9 +17,17 @@ class GeofenceController extends Controller
      */
     public function index()
     {
-        $geofences = Geofence::with(['creator', 'events' => function($query) {
+        $user = Auth::user();
+        $query = Geofence::with(['creator', 'events' => function($query) {
             $query->whereDate('event_time', today());
-        }])->latest()->get();
+        }]);
+
+        // If not super admin, only show own geofences
+        if (!$user->hasRole('super_admin')) {
+            $query->where('created_by', $user->id);
+        }
+
+        $geofences = $query->latest()->get();
 
         $stats = [
             'total' => $geofences->count(),

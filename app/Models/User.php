@@ -22,6 +22,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'vendor_id',
     ];
 
     /**
@@ -45,5 +47,19 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
+    }
+
+    public function isSuperAdmin()
+    {
+        return $this->role === 'super_admin';
+    }
+
+    public function isVendorAdmin()
+    {
+        return $this->role === 'vendor_admin';
     }
 }

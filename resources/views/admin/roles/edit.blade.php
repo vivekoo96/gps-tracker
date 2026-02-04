@@ -120,25 +120,41 @@
                             </div>
                         @endif
 
-                        <!-- Permissions Section (if you have permissions) -->
-                        @if($role->permissions->count() > 0)
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                                    Current Permissions
-                                </label>
-                                <div class="flex flex-wrap gap-2">
-                                    @foreach($role->permissions as $permission)
-                                        <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">
-                                            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                            </svg>
-                                            {{ $permission->name }}
-                                        </span>
+                        <!-- Permissions Section -->
+                        <div class="mt-6">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                Assign Permissions
+                            </label>
+                            
+                            @if($permissions->count() > 0)
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+                                    @foreach($permissions as $permission)
+                                        <div class="flex items-start">
+                                            <div class="flex items-center h-5">
+                                                <input 
+                                                    id="perm_{{ $permission->id }}" 
+                                                    name="permissions[]" 
+                                                    value="{{ $permission->name }}"
+                                                    type="checkbox" 
+                                                    class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+                                                    {{ $role->hasPermissionTo($permission->name) ? 'checked' : '' }}>
+                                            </div>
+                                            <div class="ml-3 text-sm">
+                                                <label for="perm_{{ $permission->id }}" class="font-medium text-gray-700 dark:text-gray-300 select-none cursor-pointer">
+                                                    {{ str_replace('_', ' ', ucfirst($permission->name)) }}
+                                                </label>
+                                            </div>
+                                        </div>
                                     @endforeach
                                 </div>
-                            </div>
-                        @endif
-                    </div>
+                                <div class="mt-2 flex justify-end">
+                                    <button type="button" onclick="document.querySelectorAll('input[type=checkbox]').forEach(el => el.checked = true);" class="text-xs text-indigo-600 hover:text-indigo-500 mr-3">Select All</button>
+                                    <button type="button" onclick="document.querySelectorAll('input[type=checkbox]').forEach(el => el.checked = false);" class="text-xs text-gray-500 hover:text-gray-700">Deselect All</button>
+                                </div>
+                            @else
+                                <p class="text-sm text-gray-500 italic">No permissions defined in system.</p>
+                            @endif
+                        </div>
 
                     <!-- Form Actions -->
                     <div class="mt-8 flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-700">

@@ -49,6 +49,18 @@ class AdminController extends Controller
             'devices_this_month' => $devicesThisMonth,
             'devices_last_month' => $devicesLastMonth,
             
+            // GHMC Master Data Stats
+            'total_zones' => \App\Models\Zone::count(),
+            'total_circles' => \App\Models\Circle::count(),
+            'total_wards' => \App\Models\Ward::count(),
+            'total_transfer_stations' => \App\Models\TransferStation::count(),
+            'vehicles_by_type' => Device::select('vehicle_type', \DB::raw('count(*) as count'))->groupBy('vehicle_type')->pluck('count', 'vehicle_type'),
+            'zones_with_counts' => \App\Models\Zone::withCount('devices')->get(),
+
+            // Widget Data
+            'no_communication_count' => Device::where('last_update', '<', now()->subHours(24))->count(),
+            'overspeed_count' => \App\Models\Ticket::where('alert_type', 'SPEED')->whereDate('raised_at', today())->count(), 
+            
             // User Management Stats (keeping for admin purposes)
             'total_users' => User::count(),
             'active_users' => User::whereNotNull('email_verified_at')->count(),
