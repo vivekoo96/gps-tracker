@@ -19,6 +19,19 @@ Route::get('/', function () {
     return auth()->check() ? redirect()->route('dashboard') : redirect()->route('login');
 });
 
+Route::get('/debug-auth', function() {
+    if(!auth()->check()) return "Not logged in";
+    $user = auth()->user();
+    return [
+        'email' => $user->email,
+        'role_field' => $user->role,
+        'spatie_roles' => $user->getRoleNames(),
+        'permissions' => $user->getAllPermissions()->pluck('name'),
+        'is_super_admin' => $user->hasRole('super_admin'),
+        'can_view_zones' => $user->can('view_zones'),
+    ];
+})->middleware('auth');
+
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
@@ -91,18 +104,18 @@ Route::middleware(['auth', 'role:admin|super_admin'])->prefix('admin')->as('admi
     
     // Users management (Strictly Admin/Super Admin)
     Route::resource('users', AdminUserController::class)->only(['index', 'store', 'update', 'destroy']);
+});
 
-    // Master Management
+// Fleet Management Routes (Accessible by Admin, Super Admin, and Vendor Admin)
+Route::middleware(['auth', 'role:admin|super_admin|vendor_admin'])->prefix('admin')->as('admin.')->group(function () {
+    // Master Management (Now accessible by Tenant Admins)
     Route::resource('zones', \App\Http\Controllers\Admin\ZoneController::class);
     Route::resource('circles', \App\Http\Controllers\Admin\CircleController::class);
     Route::resource('wards', \App\Http\Controllers\Admin\WardController::class);
     Route::resource('transfer-stations', \App\Http\Controllers\Admin\TransferStationController::class);
     Route::resource('landmarks', \App\Http\Controllers\Admin\LandmarkController::class);
     Route::resource('routes', \App\Http\Controllers\Admin\RouteController::class);
-});
 
-// Fleet Management Routes (Accessible by Admin, Super Admin, and Vendor Admin)
-Route::middleware(['auth', 'role:admin|super_admin|vendor_admin'])->prefix('admin')->as('admin.')->group(function () {
     // Device management routes
     Route::resource('devices', DeviceController::class);
     
