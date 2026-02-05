@@ -47,6 +47,7 @@ Route::middleware('auth')->group(function () {
 
     // GPS Tracking routes
     Route::get('/tracking/live', [TrackingController::class, 'liveTracking'])->name('tracking.live');
+    Route::get('/tracking/live-data', [TrackingController::class, 'liveData'])->name('tracking.live-data'); // AJAX Endpoint
     Route::get('/tracking/reports', [TrackingController::class, 'reports'])->name('tracking.reports');
     Route::get('/tracking/history', [TrackingController::class, 'history'])->name('tracking.history');
     Route::get('/tracking/vehicle-details/{device}', [TrackingController::class, 'vehicleDetails'])->name('tracking.vehicle-details');

@@ -153,22 +153,22 @@ class GpsTcpServer extends Command
                 $idOffset = $isExtended ? 10 : 8;
                 $terminalIdHex = substr($hex, $idOffset, 16);
                 $imeiCandidate = ltrim($terminalIdHex, '0');
+                
+                $this->info("DEBUG: Raw ID={$terminalIdHex}, Stripped={$imeiCandidate}");
 
-                // Find Device (Bypass Eloquent)
-                $deviceData = \Illuminate\Support\Facades\DB::table('devices')
-                                ->where('unique_id', $terminalIdHex)
-                                ->orWhere('imei', $terminalIdHex)
-                                ->orWhere('imei', $imeiCandidate)
-                                ->orWhere('unique_id', $imeiCandidate)
-                                ->first();
+                // Direct raw SQL query - no Laravel magic
+                $pdo = \Illuminate\Support\Facades\DB::connection()->getPdo();
+                $stmt = $pdo->prepare("SELECT id, name FROM devices WHERE imei = ? OR imei = ? OR unique_id = ? OR unique_id = ? LIMIT 1");
+                $stmt->execute([$terminalIdHex, $imeiCandidate, $terminalIdHex, $imeiCandidate]);
+                $deviceData = $stmt->fetch(\PDO::FETCH_OBJ);
+                
+                $this->info("DEBUG: Query result = " . ($deviceData ? "Found ID={$deviceData->id}" : "NOT FOUND"));
 
                 if ($deviceData) {
                     $ctx['device_id'] = $deviceData->id;
                     $ctx['device_name'] = $deviceData->name;
                     
-                    \Illuminate\Support\Facades\DB::table('devices')
-                        ->where('id', $deviceData->id)
-                        ->update(['last_seen_at' => now(), 'status' => 'active']);
+                    $pdo->exec("UPDATE devices SET last_seen_at = NOW(), status = 'active' WHERE id = {$deviceData->id}");
                         
                     $this->info("Login [GT06" . ($isExtended ? "-Ex" : "") . "]: {$deviceData->name} ({$terminalIdHex})");
 
@@ -178,7 +178,7 @@ class GpsTcpServer extends Command
                     $resp = $header . "01" . $serial . "D9DC0D0A"; 
                     $connection->write(hex2bin($resp));
                 } else {
-                    $this->warn("Unknown Device Login: $terminalIdHex");
+                    $this->warn("Unknown Device Login: $terminalIdHex (tried: $imeiCandidate)");
                 }
                 break;
 
