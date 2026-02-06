@@ -11,7 +11,9 @@
     "require": {
         "php": "^8.2",
         "laravel/framework": "^12.0",
+        "laravel/reverb": "^1.7",
         "laravel/tinker": "^2.10.1",
+        "predis/predis": "^3.3",
         "razorpay/razorpay": "^2.9",
         "react/datagram": "^1.10",
         "react/socket": "^1.16",

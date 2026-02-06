@@ -44,6 +44,18 @@ if ($response) {
     echo "Received Response (Hex): " . bin2hex($response) . "\n";
     if (str_contains(bin2hex($response), '78780501')) {
         echo "SUCCESS: Server accepted the login!\n";
+        
+        // --- SEND LOCATION PACKET ---
+        echo "Sending Location Packet...\n";
+        // 78 78 [Len] 12 [Data...] [Serial] [CRC] 0D 0A
+        // For testing, let's use a real-looking location packet hex
+        // Lat: 17.444, Lon: 78.333 (Hyderabad)
+        // Lat Hex: 17.444 * 1800000 = 31399200 -> 01DF1920
+        // Lon Hex: 78.333 * 1800000 = 140999400 -> 08677EE8
+        $locationPacketHex = "78781f120e011400010001df192008677ee800000000000000000001000112340d0a";
+        fwrite($socket, hex2bin($locationPacketHex));
+        echo "Location sent: 17.444, 78.333\n";
+        sleep(1);
     } else {
         echo "WARNING: Server replied with unexpected format.\n";
     }

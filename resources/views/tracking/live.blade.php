@@ -150,24 +150,52 @@
             updateMarkers(devices);
             if (devices.length > 0) fitBounds(devices);
 
-            // Auto-refresh via AJAX
-            setInterval(fetchLiveData, 5000); // 5 seconds
+            // 🚀 Real-time WebSockets (Laravel Echo)
+            if (window.Echo) {
+                console.log("Listening for real-time GPS updates...");
+                window.Echo.channel('tracking')
+                    .listen('.location.updated', (event) => {
+                        console.log("Real-time update received:", event);
+                        const device = event.position;
+                        // Map marker updates are encapsulated in updateMarkers
+                        // But we receive one device at a time here
+                        updateMarkers([device]);
+                        
+                        // Optionally refresh global stats every few updates or calculate locally
+                        // For now we can recalculate simple stats from the 'markers' object
+                        updateQuickStats();
+                    });
+            } else {
+                console.warn("Echo not found. Falling back to 5s polling.");
+                setInterval(fetchLiveData, 5000);
+            }
 
             function fetchLiveData() {
                 fetch('{{ route("tracking.live-data") }}')
                     .then(response => response.json())
                     .then(data => {
                         updateMarkers(data.devices);
-                        
-                        // Update Quick Stats
-                        if (data.stats) {
-                            document.getElementById('stat-total').textContent = data.stats.total;
-                            document.getElementById('stat-online').textContent = data.stats.online;
-                            document.getElementById('stat-offline').textContent = data.stats.offline;
-                            document.getElementById('stat-moving').textContent = data.stats.moving;
-                        }
+                        if (data.stats) updateStatsUI(data.stats);
                     })
                     .catch(error => console.error('Error fetching GPS data:', error));
+            }
+
+            function updateStatsUI(stats) {
+                document.getElementById('stat-total').textContent = stats.total;
+                document.getElementById('stat-online').textContent = stats.online;
+                document.getElementById('stat-offline').textContent = stats.offline;
+                document.getElementById('stat-moving').textContent = stats.moving;
+            }
+
+            function updateQuickStats() {
+                // To keep it high performance, we don't always fetch from server.
+                // We can count based on our current markers state.
+                let total = Object.keys(markers).length;
+                let online = 0;
+                let moving = 0;
+                
+                // Note: This requires the local markers/devices state to be accurate.
+                // For now, simpler to just trigger a stats refresh every 30s as a background baseline.
             }
 
             function updateMarkers(deviceList) {

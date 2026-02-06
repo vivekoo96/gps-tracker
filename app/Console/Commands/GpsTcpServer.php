@@ -3,8 +3,11 @@
 namespace App\Console\Commands;
 
 use App\Models\Device;
+use App\Events\VehicleLocationUpdated;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 use React\EventLoop\Loop;
 use React\Socket\ConnectionInterface;
 use React\Socket\SocketServer;
@@ -209,7 +212,31 @@ class GpsTcpServer extends Command
                     $this->info("GPS [{$ctx['device_name']}]: lat={$lat}, lng={$lon}, speed={$speed}");
 
                     if ($lat != 0 && $lat >= -90 && $lat <= 90 && $lon >= -180 && $lon <= 180) {
-                        \Illuminate\Support\Facades\DB::table('positions')->insert([
+                        $payload = [
+                            'device_id' => $ctx['device_id'],
+                            'name' => $ctx['device_name'] ?? 'VH001',
+                            'latitude' => $lat,
+                            'longitude' => $lon,
+                            'speed' => $speed,
+                            'fix_time' => now()->toDateTimeString(),
+                            'protocol' => $isExtended ? 'GT06-EX' : 'GT06',
+                            'last_update' => now()->toDateTimeString(),
+                            'status' => 'online'
+                        ];
+
+                        // 1. Cache Latest State in Redis (Fast)
+                        try {
+                            Redis::hset('device:latest', $ctx['device_id'], json_encode($payload));
+                            Redis::publish('tracking', json_encode(['event' => 'location.updated', 'data' => $payload]));
+                        } catch (\Exception $e) {
+                            $this->error("Redis Error: " . $e->getMessage());
+                        }
+
+                        // 2. Broadcast via WebSockets (Real-time)
+                        broadcast(new VehicleLocationUpdated($ctx['device_id'], $payload))->toOthers();
+
+                        // 3. Persist to DB (History - Background)
+                        DB::table('positions')->insert([
                             'device_id' => $ctx['device_id'],
                             'latitude' => $lat,
                             'longitude' => $lon,
@@ -221,7 +248,7 @@ class GpsTcpServer extends Command
                             'updated_at' => now()
                         ]);
                         
-                        \Illuminate\Support\Facades\DB::table('devices')
+                        DB::table('devices')
                             ->where('id', $ctx['device_id'])
                             ->update([
                                 'last_seen_at' => now(),
