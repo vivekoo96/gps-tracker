@@ -182,9 +182,14 @@ class GpsTcpServer extends Command
                 }
                 break;
 
+            case '94': // LBS/Status Info (not GPS)
+                $deviceName = $ctx['device_name'] ?? 'Unknown';
+                $this->info("LBS [{$deviceName}]: Received Cell Tower data (ignored for now)");
+                break;
+
             case '12': // Location
             case '22':
-            case '94': // Info/Status often shared structure
+                $this->info("DEBUG: Processing GPS packet hex=" . substr($hex, 0, 100));
                 if (isset($ctx['device_id'])) {
                     // Generic GT06 Location Parsing (simplified offsets)
                     $dataStart = $isExtended ? 10 : 8;
@@ -195,11 +200,15 @@ class GpsTcpServer extends Command
                     $lonHex = substr($hex, $dataStart + 22, 8); 
                     $speedHex = substr($hex, $dataStart + 30, 2); 
 
+                    $this->info("DEBUG: dataStart={$dataStart} LatHex={$latHex} LonHex={$lonHex}");
+
                     $lat = hexdec($latHex) / 1800000.0;
                     $lon = hexdec($lonHex) / 1800000.0;
                     $speed = hexdec($speedHex);
 
-                    if ($lat > 0 && $lon > 0) {
+                    $this->info("GPS [{$ctx['device_name']}]: lat={$lat}, lng={$lon}, speed={$speed}");
+
+                    if ($lat != 0 && $lat >= -90 && $lat <= 90 && $lon >= -180 && $lon <= 180) {
                         \Illuminate\Support\Facades\DB::table('positions')->insert([
                             'device_id' => $ctx['device_id'],
                             'latitude' => $lat,
@@ -220,10 +229,10 @@ class GpsTcpServer extends Command
                                 'last_location_update' => now(),
                                 'latitude' => $lat,
                                 'longitude' => $lon,
-                                'speed' => $speed
+                                'speed' => $speed,
+                                'heading' => 0,
+                                'updated_at' => now()
                             ]);
-                        
-                        $this->info("GPS [{$ctx['device_name']}]: {$lat}, {$lon}");
                     }
                 }
                 break;

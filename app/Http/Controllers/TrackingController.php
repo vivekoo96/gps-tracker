@@ -10,28 +10,21 @@ class TrackingController extends Controller
 {
     public function liveTracking(): View
     {
-        // Fetch devices for initial SSR render
-        $devices = Device::select([
-            'id', 'name', 'status', 'latitude', 'longitude', 'speed', 
-            'battery_level', 'last_location_update', 'location_address',
-            'is_moving', 'heading', 'altitude', 'satellites', 'updated_at'
-        ])
+        $devices = Device::select(['id', 'name', 'status', 'latitude', 'longitude', 'speed', 'updated_at', 'last_location_update', 'vehicle_no'])
         ->get()
         ->map(function ($device) {
+            $lastPos = $device->latestPosition;
             return [
                 'id' => $device->id,
-                'name' => $device->name ?? 'Device-' . $device->id,
+                'name' => $device->vehicle_no ?: ($device->name === 'Testing' ? 'VH001' : ($device->name ?: 'Device-' . $device->id)),
                 'status' => $device->status === 'active' ? 'online' : 'offline',
-                'lat' => $device->latitude,
-                'lng' => $device->longitude,
-                'speed' => $device->speed ?? 0,
+                'lat' => $lastPos->latitude ?? $device->latitude,
+                'lng' => $lastPos->longitude ?? $device->longitude,
+                'speed' => $lastPos->speed ?? $device->speed ?? 0,
                 'battery' => $device->battery_level ?? 0,
-                'last_update' => $device->last_location_update ?? $device->updated_at,
-                'location' => $device->location_address,
-                'is_moving' => $device->is_moving,
-                'heading' => $device->heading,
-                'altitude' => $device->altitude,
-                'satellites' => $device->satellites,
+                'last_update' => $lastPos->fix_time ?? $device->last_location_update ?? $device->updated_at,
+                'location' => $device->location_address ?? '',
+                'heading' => $lastPos->course ?? $device->heading ?? 0,
             ];
         });
 
@@ -40,32 +33,47 @@ class TrackingController extends Controller
 
     public function liveData(Request $request)
     {
-        // Get all devices with their GPS data (Exact same logic for consistent JSON)
-        $devices = Device::select([
-            'id', 'name', 'status', 'latitude', 'longitude', 'speed', 
-            'battery_level', 'last_location_update', 'location_address',
-            'is_moving', 'heading', 'altitude', 'satellites', 'updated_at'
-        ])
+        $onlineCount = 0;
+        $offlineCount = 0;
+        $movingCount = 0;
+
+        $devices = Device::select(['id', 'name', 'status', 'latitude', 'longitude', 'speed', 'updated_at', 'last_location_update', 'vehicle_no'])
         ->get()
-        ->map(function ($device) {
+        ->map(function ($device) use (&$onlineCount, &$offlineCount, &$movingCount) {
+            $lastPos = $device->latestPosition;
+            $isOnline = $device->status === 'active';
+            $speed = $lastPos->speed ?? $device->speed ?? 0;
+            
+            if ($isOnline) {
+                $onlineCount++;
+                if ($speed > 0) $movingCount++;
+            } else {
+                $offlineCount++;
+            }
+
             return [
                 'id' => $device->id,
-                'name' => $device->name ?? 'Device-' . $device->id,
-                'status' => $device->status === 'active' ? 'online' : 'offline', // Use 'active' from DB
-                'lat' => $device->latitude,
-                'lng' => $device->longitude,
-                'speed' => $device->speed ?? 0,
+                'name' => $device->vehicle_no ?: ($device->name === 'Testing' ? 'VH001' : ($device->name ?: 'Device-' . $device->id)),
+                'status' => $isOnline ? 'online' : 'offline',
+                'lat' => $lastPos->latitude ?? $device->latitude,
+                'lng' => $lastPos->longitude ?? $device->longitude,
+                'speed' => $speed,
                 'battery' => $device->battery_level ?? 0,
-                'last_update' => $device->last_location_update ?? $device->updated_at,
-                'location' => $device->location_address,
-                'is_moving' => $device->is_moving,
-                'heading' => $device->heading,
-                'altitude' => $device->altitude,
-                'satellites' => $device->satellites,
+                'last_update' => $lastPos->fix_time ?? $device->last_location_update ?? $device->updated_at,
+                'location' => $device->location_address ?? '',
+                'heading' => $lastPos->course ?? $device->heading ?? 0,
             ];
         });
 
-        return response()->json(['devices' => $devices]);
+        return response()->json([
+            'devices' => $devices,
+            'stats' => [
+                'total' => $devices->count(),
+                'online' => $onlineCount,
+                'offline' => $offlineCount,
+                'moving' => $movingCount
+            ]
+        ]);
     }
 
     public function reports(Request $request): View

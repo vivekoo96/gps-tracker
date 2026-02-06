@@ -27,11 +27,6 @@
             </div>
 
             <div class="flex items-center gap-3">
-                <a href="{{ route('admin.gps.add-test-data') }}" 
-                   class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-emerald-500/20 transition flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                    Sync Hyd Data
-                </a>
                 <button onclick="refreshData()" 
                         class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-indigo-500/20 transition flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357-2H15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
@@ -50,18 +45,16 @@
             </div>
             <div class="divide-y divide-gray-50 dark:divide-gray-700/50">
                 @foreach($devices as $device)
-                <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/30 cursor-pointer transition">
+                <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/30 cursor-pointer transition" data-device-id="{{ $device['id'] }}">
                     <div class="flex justify-between items-start mb-1">
-                        <span class="font-bold text-gray-900 dark:text-gray-100 text-sm">{{ $device->vehicle_no }}</span>
-                        <span class="w-3 h-3 rounded-full {{ $device->is_online ? 'bg-green-500 animate-pulse border-2 border-white' : 'bg-red-500' }}"></span>
+                        <span class="font-bold text-gray-900 dark:text-gray-100 text-sm">{{ $device['vehicle_no'] }}</span>
+                        <span class="status-dot w-3 h-3 rounded-full {{ $device['status'] === 'online' ? 'bg-green-500 animate-pulse border-2 border-white' : 'bg-red-500' }}"></span>
                     </div>
-                    <div class="text-xs text-gray-500 uppercase font-medium">{{ $device->name }}</div>
-                    @if($device->latestPosition)
+                    <div class="text-xs text-gray-500 uppercase font-medium">{{ $device['name'] }}</div>
                     <div class="mt-2 flex items-center justify-between text-[10px] text-gray-400 font-mono">
-                        <span class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-900 rounded">{{ $device->latestPosition->speed }} KM/H</span>
-                        <span>{{ $device->latestPosition->fix_time->diffForHumans() }}</span>
+                        <span class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-900 rounded">{{ $device['speed'] }} KM/H</span>
+                        <span>{{ \Carbon\Carbon::parse($device['last_update'])->diffForHumans() }}</span>
                     </div>
-                    @endif
                 </div>
                 @endforeach
             </div>
@@ -77,15 +70,15 @@
                     <h3 class="text-xs font-bold text-gray-400 uppercase mb-2 tracking-widest">Map Layers</h3>
                     <div class="space-y-2">
                         <label class="flex items-center gap-2 text-sm cursor-pointer">
-                            <input type="checkbox" checked class="rounded text-indigo-600 focus:ring-indigo-500">
+                            <input type="checkbox" id="layer-vehicles" checked class="rounded text-indigo-600 focus:ring-indigo-500">
                             <span class="text-gray-700 dark:text-gray-300">Vehicles</span>
                         </label>
                         <label class="flex items-center gap-2 text-sm cursor-pointer">
-                            <input type="checkbox" checked class="rounded text-violet-600 focus:ring-indigo-500">
+                            <input type="checkbox" id="layer-landmarks" checked class="rounded text-violet-600 focus:ring-indigo-500">
                             <span class="text-gray-700 dark:text-gray-300">Landmarks</span>
                         </label>
                         <label class="flex items-center gap-2 text-sm cursor-pointer">
-                            <input type="checkbox" checked class="rounded text-blue-500 focus:ring-indigo-500">
+                            <input type="checkbox" id="layer-routes" checked class="rounded text-blue-500 focus:ring-indigo-500">
                             <span class="text-gray-700 dark:text-gray-300">Routes</span>
                         </label>
                     </div>
@@ -100,8 +93,8 @@
     #map {
         filter: saturate(1.1) brightness(1.05);
     }
-    .custom-car-icon svg {
-        transition: all 0.5s ease-out;
+    .custom-car-icon {
+        transition: all 0.5s ease;
     }
     .leaflet-popup-content-wrapper {
         border-radius: 12px;
@@ -141,151 +134,167 @@
 // Initialize map - Default to Hyderabad (GHMC)
 let map = L.map('map').setView([17.3850, 78.4867], 12); 
 
-// Add Esri WorldStreetMap tiles
 // Add CartoDB Voyager tiles (Premium & Reliable)
 L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
     subdomains: 'abcd',
     maxZoom: 19
 }).addTo(map);
 
-    // Data from Backend
-    const devices = @json($devices);
-    const landmarks = @json($landmarks);
-    const routes = @json($routes);
+    // --- DATA ---
+    const devicesData = @json($devices);
+    const landmarksData = @json($landmarks);
+    const routesData = @json($routes);
 
-    // Group all features for boundary fitting
-    const allFeatures = L.featureGroup().addTo(map);
+    // Layer Groups
+    const vehicleLayer = L.layerGroup().addTo(map);
+    const landmarkLayer = L.layerGroup().addTo(map);
+    const routeLayer = L.layerGroup().addTo(map);
+    
+    // Feature group for auto-fitting (unaffected by toggles)
+    const fitGroup = L.featureGroup();
+
+    const markers = {};
 
     // --- LANDMARKS ---
-    landmarks.forEach(function(l) {
-        if(l.latitude && l.longitude) {
-            let color = '#8b5cf6'; 
-            let iconChar = '📍';
-            
+    console.log("Landmarks Data:", landmarksData);
+    landmarksData.forEach(function(l) {
+        const lat = parseFloat(l.latitude);
+        const lng = parseFloat(l.longitude);
+        if(!isNaN(lat) && !isNaN(lng)) {
+            let color = '#8b5cf6'; let iconChar = '📍';
             if (l.type === 'Dump Yard') { color = '#ef4444'; iconChar = '🗑️'; }
             else if (l.type === 'Transfer Station') { color = '#f97316'; iconChar = '♻️'; }
             else if (l.type === 'Garage') { color = '#3b82f6'; iconChar = '🔧'; }
-
+            
             const landmarkIcon = L.divIcon({
                 html: `<div style="background-color: ${color}; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); font-size: 14px;">${iconChar}</div>`,
-                className: 'custom-landmark-icon',
-                iconSize: [30, 30],
-                iconAnchor: [15, 15]
+                className: 'custom-landmark-icon', iconSize: [30, 30], iconAnchor: [15, 15]
             });
-
-            L.marker([l.latitude, l.longitude], { icon: landmarkIcon })
-                .bindPopup(`<strong>${l.name}</strong><br>${l.type}`)
-                .addTo(allFeatures);
+            const m = L.marker([lat, lng], { icon: landmarkIcon }).bindPopup(`<strong>${l.name}</strong><br>${l.type}`).addTo(landmarkLayer);
+            m.addTo(fitGroup);
         }
     });
 
     // --- ROUTES ---
-    routes.forEach(function(r) {
+    console.log("Routes Data:", routesData);
+    routesData.forEach(function(r) {
         let stops = r.stops;
-        if (typeof stops === 'string') {
-            try { stops = JSON.parse(stops); } catch(e) { console.error("Route parse error", e); return; }
-        }
+        if (typeof stops === 'string') { try { stops = JSON.parse(stops); } catch(e) { console.error("Route parse error", e); return; } }
         
         if(stops && Array.isArray(stops) && stops.length > 0) {
-            const latlngs = stops.map(stop => [stop.lat, stop.lng]);
-            const polyline = L.polyline(latlngs, {
-                color: '#3b82f6',
-                weight: 4,
-                opacity: 0.7,
-                dashArray: '10, 10' 
-            })
-            .bindPopup(`<strong>Route: ${r.name}</strong><br>${r.description || ''}`)
-            .addTo(allFeatures);
-        }
-    });
+            const latlngs = stops.map(stop => {
+                const sLat = parseFloat(stop.lat || stop.latitude);
+                const sLng = parseFloat(stop.lng || stop.longitude);
+                return [sLat, sLng];
+            }).filter(pos => !isNaN(pos[0]) && !isNaN(pos[1]));
 
-    // --- DEVICES ---
-    devices.forEach(function(device) {
-        const position = device.latest_position || device.latestPosition;
-        if (position && position.latitude && position.longitude) {
-            let iconColor = '#ef4444'; 
-            const lastUpdate = new Date(position.fix_time);
-            const now = new Date();
-            const hoursDiff = (now - lastUpdate) / 1000 / 60 / 60;
-            const isOnline = hoursDiff < 24; 
-            
-            if (isOnline) {
-                if (position.speed > 0) iconColor = '#10b981'; 
-                else iconColor = '#3b82f6'; 
+            if (latlngs.length > 1) {
+                const p = L.polyline(latlngs, { color: '#3b82f6', weight: 4, opacity: 0.7, dashArray: '10, 10' }).bindPopup(`<strong>Route: ${r.name}</strong><br>${r.description || ''}`).addTo(routeLayer);
+                p.addTo(fitGroup);
             }
-
-            const rotation = position.course || 0;
-            const iconHtml = `
-                <div style="transform: rotate(${rotation}deg); transform-origin: center; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.3));">
-                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="20" cy="20" r="18" fill="white" fill-opacity="0.9"/>
-                        <path d="M20 6L32 30L20 24L8 30L20 6Z" fill="${iconColor}"/>
-                    </svg>
-                </div>
-            `;
-            
-            const customIcon = L.divIcon({
-                html: iconHtml,
-                iconSize: [40, 40],
-                iconAnchor: [20, 20],
-                popupAnchor: [0, -20],
-                className: 'custom-car-icon'
-            });
-
-            const marker = L.marker([position.latitude, position.longitude], {icon: customIcon})
-                .addTo(allFeatures);
-            
-            const attributes = position.attributes || {};
-            const ignition = position.ignition ? 'ON' : 'OFF';
-            const battery = attributes.battery_level ? attributes.battery_level + '%' : 'N/A';
-            const sat = position.satellites || 0;
-
-            const popupContent = `
-                <div class="px-2 py-1 min-w-[200px]">
-                    <h4 class="font-bold text-gray-900 border-b pb-1 mb-2">${device.name}</h4>
-                    <div class="space-y-1 text-sm">
-                        <div class="flex justify-between">
-                            <span class="text-gray-500">Status:</span>
-                            <span class="${isOnline ? 'text-green-600' : 'text-red-600'} font-bold">${isOnline ? 'Online' : 'Offline'}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-500">Speed:</span>
-                            <span class="font-mono">${position.speed} km/h</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-500">Ignition:</span>
-                            <span class="font-bold ${position.ignition ? 'text-green-600' : 'text-gray-500'}">${ignition}</span>
-                        </div>
-                         <div class="flex justify-between">
-                            <span class="text-gray-500">Battery:</span>
-                            <span>${battery}</span>
-                        </div>
-                         <div class="flex justify-between">
-                            <span class="text-gray-500">Satellites:</span>
-                            <span>${sat}</span>
-                        </div>
-                        <div class="mt-2 text-xs text-gray-400 text-right">
-                            ${lastUpdate.toLocaleString()}
-                        </div>
-                    </div>
-                </div>
-            `;
-            marker.bindPopup(popupContent);
         }
     });
 
-    // Auto-fit map to show all elements
-    if (Object.keys(allFeatures._layers).length > 0) {
-        map.fitBounds(allFeatures.getBounds().pad(0.1));
+    // --- INITIAL DEVICES ---
+    updateMarkers(devicesData);
+
+    // Initial Auto-fit
+    setTimeout(() => {
+        if (fitGroup.getLayers().length > 0) { 
+            map.fitBounds(fitGroup.getBounds().pad(0.1)); 
+        } else if (Object.keys(markers).length > 0) {
+            const deviceGroup = L.featureGroup(Object.values(markers));
+            map.fitBounds(deviceGroup.getBounds().pad(0.1));
+        }
+    }, 500);
+
+    // --- LAYER TOGGLES ---
+    document.getElementById('layer-vehicles').addEventListener('change', e => e.target.checked ? map.addLayer(vehicleLayer) : map.removeLayer(vehicleLayer));
+    document.getElementById('layer-landmarks').addEventListener('change', e => e.target.checked ? map.addLayer(landmarkLayer) : map.removeLayer(landmarkLayer));
+    document.getElementById('layer-routes').addEventListener('change', e => e.target.checked ? map.addLayer(routeLayer) : map.removeLayer(routeLayer));
+
+    // --- AJAX REFRESH ---
+    setInterval(fetchLiveData, 5000);
+
+    function fetchLiveData() {
+        fetch('{{ route("admin.gps.live-data") }}')
+            .then(response => response.json())
+            .then(data => {
+                updateMarkers(data.devices);
+            })
+            .catch(err => console.error("GPS Update Error", err));
     }
 
-// Refresh function
-function refreshData() {
-    window.location.reload();
-}
+    function updateMarkers(deviceList) {
+        deviceList.forEach(function(device) {
+            if (device.lat && device.lng) {
+                const lat = parseFloat(device.lat);
+                const lng = parseFloat(device.lng);
+                
+                let iconColor = '#ef4444'; // Offline
+                if (device.status === 'active' || device.is_online) {
+                    iconColor = device.speed > 0 ? '#10b981' : '#3b82f6';
+                }
 
-// Auto-refresh every 30 seconds
-setInterval(refreshData, 30000);
+                const rotation = device.heading || 0;
+                const iconHtml = `
+                    <div style="transform: rotate(${rotation}deg); transform-origin: center; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.3));">
+                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="20" cy="20" r="18" fill="white" fill-opacity="0.9"/>
+                            <path d="M20 6L32 30L20 24L8 30L20 6Z" fill="${iconColor}"/>
+                        </svg>
+                    </div>
+                `;
+                
+                const customIcon = L.divIcon({ html: iconHtml, iconSize: [40, 40], iconAnchor: [20, 20], popupAnchor: [0, -20], className: 'custom-car-icon' });
+
+                if (markers[device.id]) {
+                    markers[device.id].setLatLng([lat, lng]);
+                    markers[device.id].setIcon(customIcon);
+                    markers[device.id].setPopupContent(createPopup(device));
+                } else {
+                    const marker = L.marker([lat, lng], {icon: customIcon}).bindPopup(createPopup(device)).addTo(vehicleLayer);
+                    markers[device.id] = marker;
+                }
+                
+                // Update Sidebar
+                updateSidebarStatus(device);
+            }
+        });
+    }
+
+    function createPopup(device) {
+        return `
+            <div class="px-2 py-1 min-w-[200px]">
+                <h4 class="font-bold text-gray-900 border-b pb-1 mb-2">${device.name}</h4>
+                <div class="space-y-1 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Status:</span>
+                        <span class="${device.status === 'online' ? 'text-green-600' : 'text-red-600'} font-bold capitalize">${device.status}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Speed:</span>
+                        <span class="font-mono">${device.speed} km/h</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Ignition:</span>
+                        <span class="font-bold ${device.ignition ? 'text-green-600' : 'text-gray-500'}">${device.ignition ? 'ON' : 'OFF'}</span>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-400 text-right">${new Date(device.last_update).toLocaleString()}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    function updateSidebarStatus(device) {
+        const row = document.querySelector(`[data-device-id="${device.id}"]`);
+        if (row) {
+            const dot = row.querySelector('.status-dot');
+            if (dot) dot.className = `status-dot w-3 h-3 rounded-full ${device.status === 'online' ? 'bg-green-500 animate-pulse border-2 border-white' : 'bg-red-500'}`;
+        }
+    }
+
+    function refreshData() { fetchLiveData(); }
 </script>
 </x-app-layout>

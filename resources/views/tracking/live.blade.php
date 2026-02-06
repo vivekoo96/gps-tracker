@@ -61,18 +61,26 @@
                     <div class="space-y-4">
                         @foreach($devices as $device)
                             <div class="flex items-center justify-between p-4 rounded-lg {{ $device['status'] === 'online' ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20' }}">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-3 h-3 {{ $device['status'] === 'online' ? 'bg-green-500' : 'bg-red-500' }} rounded-full"></div>
-                                    <div>
-                                        <p class="font-medium text-gray-900 dark:text-gray-100">{{ $device['name'] }}</p>
-                                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                                <div class="space-y-1">
+                                    <p class="font-bold text-gray-900 dark:text-gray-100 text-base">
+                                        {{ $device['name'] }}
+                                    </p>
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-2.5 h-2.5 {{ $device['status'] === 'online' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500' }} rounded-full"></div>
+                                        <p class="text-xs font-semibold uppercase tracking-wider {{ $device['status'] === 'online' ? 'text-green-600' : 'text-red-500' }}">
                                             {{ $device['status'] === 'online' ? 'Online' : 'Offline' }}
                                         </p>
                                     </div>
                                 </div>
                                 <div class="text-right">
-                                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $device['speed'] }} km/h</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ $device['battery'] }}% battery</p>
+                                    <p class="text-lg font-mono font-bold text-gray-900 dark:text-gray-100">
+                                        {{ number_format($device['speed'], 2) }} <span class="text-[10px] text-gray-400 font-normal">km/h</span>
+                                    </p>
+                                    @if(isset($device['battery']) && $device['battery'] > 0)
+                                        <p class="text-[10px] font-medium text-gray-400 uppercase tracking-tighter">
+                                            ⚡ {{ $device['battery'] }}% battery
+                                        </p>
+                                    @endif
                                 </div>
                             </div>
                         @endforeach
@@ -87,25 +95,25 @@
                 </div>
                 <div class="p-6">
                     <div class="space-y-4">
-                        <div class="flex justify-between">
+                         <div class="flex justify-between">
                             <span class="text-sm text-gray-600 dark:text-gray-400">Total Devices</span>
-                            <span class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ count($devices) }}</span>
+                            <span id="stat-total" class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ count($devices) }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-sm text-gray-600 dark:text-gray-400">Online</span>
-                            <span class="text-sm font-medium text-green-600 dark:text-green-400">
+                            <span id="stat-online" class="text-sm font-medium text-green-600 dark:text-green-400">
                                 {{ collect($devices)->where('status', 'online')->count() }}
                             </span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-sm text-gray-600 dark:text-gray-400">Offline</span>
-                            <span class="text-sm font-medium text-red-600 dark:text-red-400">
+                            <span id="stat-offline" class="text-sm font-medium text-red-600 dark:text-red-400">
                                 {{ collect($devices)->where('status', 'offline')->count() }}
                             </span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-sm text-gray-600 dark:text-gray-400">Moving</span>
-                            <span class="text-sm font-medium text-blue-600 dark:text-blue-400">
+                            <span id="stat-moving" class="text-sm font-medium text-blue-600 dark:text-blue-400">
                                 {{ collect($devices)->where('speed', '>', 0)->count() }}
                             </span>
                         </div>
@@ -117,8 +125,16 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Initial center variables
+            var defaultCenter = [17.3850, 78.4867]; // Default to Hyderabad
+            var devices = @json($devices);
+            
+            if (devices.length > 0 && devices[0].lat && devices[0].lng) {
+                defaultCenter = [parseFloat(devices[0].lat), parseFloat(devices[0].lng)];
+            }
+
             // Initialize the map
-            var map = L.map('map').setView([23.0225, 72.5714], 12); // Default center
+            var map = L.map('map').setView(defaultCenter, 12); 
 
             // Add CartoDB Voyager tiles
             L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
@@ -129,11 +145,10 @@
 
             // Store markers by device ID to update position
             var markers = {};
-            var devices = @json($devices);
 
             // Initial Render
             updateMarkers(devices);
-            fitBounds(devices);
+            if (devices.length > 0) fitBounds(devices);
 
             // Auto-refresh via AJAX
             setInterval(fetchLiveData, 5000); // 5 seconds
@@ -143,7 +158,14 @@
                     .then(response => response.json())
                     .then(data => {
                         updateMarkers(data.devices);
-                        // Optional: update stats counters via DOM manipulation if needed
+                        
+                        // Update Quick Stats
+                        if (data.stats) {
+                            document.getElementById('stat-total').textContent = data.stats.total;
+                            document.getElementById('stat-online').textContent = data.stats.online;
+                            document.getElementById('stat-offline').textContent = data.stats.offline;
+                            document.getElementById('stat-moving').textContent = data.stats.moving;
+                        }
                     })
                     .catch(error => console.error('Error fetching GPS data:', error));
             }

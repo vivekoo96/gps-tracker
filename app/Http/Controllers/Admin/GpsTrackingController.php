@@ -12,21 +12,28 @@ class GpsTrackingController extends Controller
 {
     public function dashboard()
     {
-        $devices = Device::with(['latestPosition'])->get();
-        $totalDevices = $devices->count();
-        $totalDevices = $devices->count();
-        $onlineDevices = $devices->filter(fn($d) => $d->is_online)->count();
+        $deviceModels = Device::with(['latestPosition'])->get();
+        $totalDevices = $deviceModels->count();
+        $onlineDevices = $deviceModels->filter(fn($d) => $d->status === 'active')->count();
         $offlineDevices = $totalDevices - $onlineDevices;
         
-        // Get recent GPS data for map
-        $recentGpsData = Position::with('device')
-            ->has('device') // Only get positions with existing devices
-            ->whereNotNull('latitude')
-            ->whereNotNull('longitude')
-            ->where('fix_time', '>=', now()->subHours(24))
-            ->latest('fix_time')
-            ->take(100)
-            ->get();
+        $devices = $deviceModels->map(function ($device) {
+            $pos = $device->latestPosition;
+            return [
+                'id' => $device->id,
+                'name' => $device->name,
+                'vehicle_no' => $device->vehicle_no ?? $device->name,
+                'lat' => $pos->latitude ?? $device->latitude,
+                'lng' => $pos->longitude ?? $device->longitude,
+                'speed' => $pos->speed ?? $device->speed ?? 0,
+                'status' => $device->status === 'active' ? 'online' : 'offline',
+                'is_online' => $device->status === 'active',
+                'heading' => $pos->course ?? $device->heading ?? 0,
+                'last_update' => $pos->fix_time ?? $device->last_location_update ?? $device->updated_at,
+                'ignition' => $pos->ignition ?? false,
+                'battery' => $device->battery_level ?? 0,
+            ];
+        });
 
         $landmarks = \App\Models\Landmark::all();
         $routes = \App\Models\Route::all();
@@ -36,7 +43,6 @@ class GpsTrackingController extends Controller
             'totalDevices', 
             'onlineDevices', 
             'offlineDevices',
-            'recentGpsData',
             'landmarks',
             'routes'
         ));
@@ -79,61 +85,31 @@ class GpsTrackingController extends Controller
 
     public function liveData($deviceId = null)
     {
+        $query = Device::with(['latestPosition']);
+        
         if ($deviceId) {
-            $latestData = Position::where('device_id', $deviceId)
-                ->whereNotNull('latitude')
-                ->whereNotNull('longitude')
-                ->latest('fix_time')
-                ->first();
-        } else {
-            $latestData = Position::with('device')
-                ->whereNotNull('latitude')
-                ->whereNotNull('longitude')
-                ->latest('fix_time')
-                ->take(20)
-                ->get();
+            $query->where('id', $deviceId);
         }
 
-        return response()->json($latestData);
-    }
+        $devices = $query->get()->map(function ($device) {
+            $pos = $device->latestPosition;
+            return [
+                'id' => $device->id,
+                'name' => $device->name,
+                'vehicle_no' => $device->vehicle_no,
+                'lat' => $pos->latitude ?? $device->latitude,
+                'lng' => $pos->longitude ?? $device->longitude,
+                'speed' => $pos->speed ?? $device->speed ?? 0,
+                'status' => $device->status === 'active' ? 'online' : 'offline',
+                'is_online' => $device->status === 'active',
+                'heading' => $pos->course ?? $device->heading ?? 0,
+                'last_update' => $pos->fix_time ?? $device->last_location_update ?? $device->updated_at,
+                'ignition' => $pos->ignition ?? false,
+                'battery' => $device->battery_level ?? 0,
+                'satellites' => $pos->satellites ?? $device->satellites ?? 0,
+            ];
+        });
 
-    public function addTestData()
-    {
-        $devices = Device::all();
-        
-        if ($devices->isEmpty()) {
-            return redirect()->back()->with('error', 'No devices found. Please create a device first.');
-        }
-
-        // Generate test GPS data around Hyderabad, India (GHMC Area)
-        $baseLatitude = 17.3850;
-        $baseLongitude = 78.4867;
-        
-        foreach ($devices as $device) {
-            // Create a few recent positions for each device
-            for ($i = 0; $i < 5; $i++) {
-                Position::create([
-                    'device_id' => $device->id,
-                    'latitude' => $baseLatitude + (rand(-50, 50) / 1000),
-                    'longitude' => $baseLongitude + (rand(-50, 50) / 1000),
-                    'speed' => rand(0, 80),
-                    'course' => rand(0, 360),
-                    'altitude' => rand(50, 200),
-                    'satellites' => rand(4, 12),
-                    'attributes' => json_encode(['battery_level' => rand(20, 100), 'signal_strength' => rand(1, 5)]),
-                    'fix_time' => now()->subMinutes(rand(0, 30)),
-                    'raw' => 'test_data_hyd_' . $device->id . '_' . $i
-                ]);
-            }
-
-            // Update device status
-            $device->update([
-                'last_seen_at' => now(),
-                'last_location_update' => now(),
-                'status' => 'active'
-            ]);
-        }
-
-        return redirect()->route('admin.gps.dashboard')->with('success', 'Hyderabad GPS data synced for all devices successfully!');
+        return response()->json(['devices' => $devices]);
     }
 }
