@@ -21,6 +21,11 @@ class Ticket extends Model
         return $this->belongsTo(User::class, 'closed_by');
     }
 
+    public function assignedTo()
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
+    }
+
     public function logs()
     {
         return $this->hasMany(TicketLog::class);

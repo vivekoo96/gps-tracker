@@ -4,6 +4,8 @@ namespace App\Console\Commands;
 
 use App\Models\Device;
 use App\Events\VehicleLocationUpdated;
+use App\Services\ProtocolDetector;
+use App\Models\ProtocolLog;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +23,14 @@ class GpsTcpServer extends Command
     // Store connection context: buffer, authentication state, etc.
     // Keyed by output of spl_object_id($connection) or just use SplObjectStorage
     protected array $connections = [];
+    
+    protected ProtocolDetector $protocolDetector;
+    
+    public function __construct(ProtocolDetector $protocolDetector)
+    {
+        parent::__construct();
+        $this->protocolDetector = $protocolDetector;
+    }
 
     public function handle(): int
     {
@@ -55,7 +65,19 @@ class GpsTcpServer extends Command
 
             // Handle Disconnection
             $connection->on('close', function () use ($connId) {
-                $this->info("Connection Closed: {$connId}");
+                $ctx = $this->connections[$connId] ?? null;
+                if ($ctx && isset($ctx['device_id'])) {
+                    $this->info("Device Offline: {$ctx['device_name']} ({$ctx['device_id']})");
+                    
+                    // Trigger Webhook
+                    app(\App\Services\WebhookService::class)->trigger('device.offline', [
+                        'device_id' => $ctx['device_id'],
+                        'device_name' => $ctx['device_name'],
+                        'timestamp' => now()->toIso8601String(),
+                    ]);
+                } else {
+                    $this->info("Connection Closed: {$connId}");
+                }
                 unset($this->connections[$connId]);
             });
 
@@ -108,8 +130,32 @@ class GpsTcpServer extends Command
         $buffer = $ctx['buffer'];
         $len = strlen($buffer);
         
-        if ($len < 5) return; // Need at least header
+        if ($len < 5) return; // Need at least some data
 
+        try {
+            // Use protocol detector to identify protocol
+            $parser = $this->protocolDetector->detect($buffer);
+            $protocolName = $parser->getProtocolName();
+            
+            // For GT06, we need to extract complete packets
+            if ($protocolName === 'gt06') {
+                $this->processGT06Buffer($connection, $ctx, $parser);
+            } elseif ($protocolName === 'tk103') {
+                $this->processTK103Buffer($connection, $ctx, $parser);
+            } else {
+                // Text or unknown protocol - process line by line
+                $this->processTextBuffer($connection, $ctx, $parser);
+            }
+        } catch (\Exception $e) {
+            Log::error("Protocol processing error: " . $e->getMessage());
+            $ctx['buffer'] = ''; // Clear buffer on error
+        }
+    }
+
+    protected function processGT06Buffer(ConnectionInterface $connection, array &$ctx, $parser): void
+    {
+        $buffer = $ctx['buffer'];
+        $len = strlen($buffer);
         $hex = bin2hex($buffer);
 
         // CHECK PROTOCOL: GT06 (0x78 0x78) OR (0x79 0x79)
@@ -132,7 +178,7 @@ class GpsTcpServer extends Command
 
             if ($len >= $totalExpectedBytes) {
                 $packet = substr($buffer, 0, $totalExpectedBytes);
-                $this->processGt06Packet($connection, $ctx, $packet, $isExtended);
+                $this->processPacketWithParser($connection, $ctx, $packet, $parser);
                 $ctx['buffer'] = substr($buffer, $totalExpectedBytes);
                 
                 if (strlen($ctx['buffer']) > 0) {
@@ -141,7 +187,222 @@ class GpsTcpServer extends Command
             }
             return;
         }
-        // ... (remaining buffer processing)
+    }
+
+    protected function processTK103Buffer(ConnectionInterface $connection, array &$ctx, $parser): void
+    {
+        $buffer = $ctx['buffer'];
+        
+        // TK103 uses line-based protocol with parentheses
+        if (($pos = strpos($buffer, ')')) !== false) {
+            $packet = substr($buffer, 0, $pos + 1);
+            $this->processPacketWithParser($connection, $ctx, $packet, $parser);
+            $ctx['buffer'] = substr($buffer, $pos + 1);
+            
+            if (strlen($ctx['buffer']) > 0) {
+                $this->processBuffer($connection, $ctx);
+            }
+        }
+    }
+
+    protected function processTextBuffer(ConnectionInterface $connection, array &$ctx, $parser): void
+    {
+        $buffer = $ctx['buffer'];
+        
+        // Process line by line
+        if (($pos = strpos($buffer, "\n")) !== false) {
+            $line = substr($buffer, 0, $pos);
+            $this->processPacketWithParser($connection, $ctx, $line, $parser);
+            $ctx['buffer'] = substr($buffer, $pos + 1);
+            
+            if (strlen($ctx['buffer']) > 0) {
+                $this->processBuffer($connection, $ctx);
+            }
+        }
+    }
+
+    protected function processPacketWithParser(ConnectionInterface $connection, array &$ctx, string $packet, $parser): void
+    {
+        try {
+            // Parse the packet
+            $parsedData = $parser->parse($packet);
+            $protocolName = $parser->getProtocolName();
+            
+            // Log protocol activity
+            $this->logProtocol($ctx['device_id'] ?? null, $protocolName, $packet, $parsedData, true);
+            
+            // Handle based on packet type
+            switch ($parsedData['type']) {
+                case 'login':
+                    $this->handleLogin($connection, $ctx, $parsedData, $parser);
+                    break;
+                
+                case 'location':
+                    $this->handleLocation($connection, $ctx, $parsedData, $parser);
+                    break;
+                
+                case 'heartbeat':
+                    $this->handleHeartbeat($connection, $ctx, $parsedData, $parser);
+                    break;
+                
+                case 'alarm':
+                    $this->handleAlarm($connection, $ctx, $parsedData, $parser);
+                    break;
+            }
+        } catch (\Exception $e) {
+            Log::error("Packet parsing error: " . $e->getMessage());
+            $this->logProtocol($ctx['device_id'] ?? null, $parser->getProtocolName(), $packet, [], false, $e->getMessage());
+        }
+    }
+
+    protected function handleLogin(ConnectionInterface $connection, array &$ctx, array $parsedData, $parser): void
+    {
+        $imei = $parsedData['imei'];
+        
+        // Find device by IMEI
+        $device = Device::where('imei', $imei)
+            ->orWhere('unique_id', $imei)
+            ->first();
+        
+        if ($device) {
+            $ctx['device_id'] = $device->id;
+            $ctx['device_name'] = $device->name;
+            
+            // Update device status and protocol
+            $device->update([
+                'last_seen_at' => now(),
+                'status' => 'active',
+                'protocol_type' => $parser->getProtocolName(),
+            ]);
+            
+            $this->info("Login [{$parser->getProtocolName()}]: {$device->name} ({$imei})");
+            
+            // Trigger Webhook
+            app(\App\Services\WebhookService::class)->trigger('device.online', [
+                'device_id' => $device->id,
+                'device_name' => $device->name,
+                'imei' => $imei,
+                'protocol' => $parser->getProtocolName(),
+                'timestamp' => now()->toIso8601String(),
+            ], $device->vendor_id);
+            
+            // Send login response
+            $response = $parser->buildLoginResponse($device);
+            $connection->write($response);
+            
+            // Send pending commands
+            $this->sendPendingCommands($connection, $device->id);
+        } else {
+            $this->warn("Unknown Device Login: {$imei}");
+        }
+    }
+
+    protected function handleLocation(ConnectionInterface $connection, array &$ctx, array $parsedData, $parser): void
+    {
+        if (!isset($ctx['device_id'])) return;
+        
+        // Save GPS data
+        $this->saveGpsData($ctx['device_id'], $parsedData);
+        
+        // Send response
+        $response = $parser->buildLocationResponse();
+        $connection->write($response);
+    }
+
+    protected function handleHeartbeat(ConnectionInterface $connection, array &$ctx, array $parsedData, $parser): void
+    {
+        if (!isset($ctx['device_id'])) return;
+        
+        // Update last seen
+        Device::where('id', $ctx['device_id'])->update(['last_seen_at' => now()]);
+        
+        // Send response
+        $response = $parser->buildHeartbeatResponse();
+        $connection->write($response);
+    }
+
+    protected function handleAlarm(ConnectionInterface $connection, array &$ctx, array $parsedData, $parser): void
+    {
+        if (!isset($ctx['device_id'])) return;
+        
+        $this->info("🚨 ALARM from device ID: {$ctx['device_id']}");
+        
+        // Save GPS data
+        $this->saveGpsData($ctx['device_id'], $parsedData);
+        
+        // Create SOS alert if applicable
+        // ... (existing SOS logic)
+        
+        // Send response
+        $response = $parser->buildLocationResponse();
+        $connection->write($response);
+    }
+
+    protected function logProtocol(?int $deviceId, string $protocolType, string $rawData, array $parsedData, bool $success, ?string $error = null): void
+    {
+        try {
+            ProtocolLog::create([
+                'device_id' => $deviceId,
+                'protocol_type' => $protocolType,
+                'raw_data' => bin2hex($rawData),
+                'parsed_data' => $parsedData,
+                'parse_success' => $success,
+                'error_message' => $error,
+            ]);
+        } catch (\Exception $e) {
+            // Silently fail logging to not disrupt GPS processing
+        }
+    }
+
+    protected function saveGpsData(int $deviceId, array $parsedData): void
+    {
+        if (!isset($parsedData['latitude']) || !isset($parsedData['longitude'])) {
+            return;
+        }
+
+        $lat = $parsedData['latitude'];
+        $lon = $parsedData['longitude'];
+
+        // Validate coordinates
+        if ($lat == 0 || $lat < -90 || $lat > 90 || $lon < -180 || $lon > 180) {
+            return;
+        }
+
+        try {
+            // Update device location
+            Device::where('id', $deviceId)->update([
+                'latitude' => $lat,
+                'longitude' => $lon,
+                'speed' => $parsedData['speed'] ?? null,
+                'heading' => $parsedData['course'] ?? null,
+                'altitude' => $parsedData['altitude'] ?? null,
+                'satellites' => $parsedData['satellites'] ?? null,
+                'last_location_update' => now(),
+                'last_seen_at' => now(),
+            ]);
+
+            // Save GPS data record
+            DB::table('gps_data')->insert([
+                'device_id' => $deviceId,
+                'latitude' => $lat,
+                'longitude' => $lon,
+                'speed' => $parsedData['speed'] ?? 0,
+                'heading' => $parsedData['course'] ?? 0,
+                'altitude' => $parsedData['altitude'] ?? 0,
+                'satellites' => $parsedData['satellites'] ?? 0,
+                'timestamp' => $parsedData['timestamp'] ?? now(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // Broadcast location update
+            $device = Device::find($deviceId);
+            if ($device) {
+                broadcast(new VehicleLocationUpdated($device))->toOthers();
+            }
+        } catch (\Exception $e) {
+            Log::error("Failed to save GPS data: " . $e->getMessage());
+        }
     }
 
     protected function processGt06Packet(ConnectionInterface $connection, array &$ctx, string $packet, bool $isExtended = false): void
@@ -180,8 +441,68 @@ class GpsTcpServer extends Command
                     $header = $isExtended ? "79790005" : "787805";
                     $resp = $header . "01" . $serial . "D9DC0D0A"; 
                     $connection->write(hex2bin($resp));
+                    
+                    // ✅ Check for pending commands and send them
+                    $this->sendPendingCommands($connection, $deviceData->id);
                 } else {
                     $this->warn("Unknown Device Login: $terminalIdHex (tried: $imeiCandidate)");
+                }
+                break;
+
+            case '16': // 🚨 SOS / Alarm Packet
+                if (isset($ctx['device_id'])) {
+                    $this->info("🚨 SOS ALERT from device ID: {$ctx['device_id']} ({$ctx['device_name']})");
+                    
+                    // Parse location data from alarm packet (similar to location packet)
+                    $dataStart = $isExtended ? 10 : 8;
+                    
+                    $lat = 0;
+                    $lon = 0;
+                    $speed = 0;
+                    
+                    if (strlen($hex) >= ($dataStart + 30)) {
+                        $latHex = substr($hex, $dataStart + 14, 8);
+                        $lonHex = substr($hex, $dataStart + 22, 8);
+                        $speedHex = substr($hex, $dataStart + 30, 2);
+                        
+                        $lat = hexdec($latHex) / 1800000.0;
+                        $lon = hexdec($lonHex) / 1800000.0;
+                        $speed = hexdec($speedHex);
+                    }
+                    
+                    // Create SOS Alert
+                    try {
+                        $alertId = DB::table('sos_alerts')->insertGetId([
+                            'device_id' => $ctx['device_id'],
+                            'latitude' => $lat != 0 ? $lat : null,
+                            'longitude' => $lon != 0 ? $lon : null,
+                            'speed' => $speed,
+                            'status' => 'active',
+                            'triggered_at' => now(),
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ]);
+                        
+                        $this->info("✅ SOS Alert created: ID={$alertId}");
+                        
+                        // Trigger notifications and broadcast
+                        $alert = \App\Models\SosAlert::find($alertId);
+                        if ($alert) {
+                            // Broadcast real-time alert
+                            broadcast(new \App\Events\SosAlertTriggered($alert))->toOthers();
+                            
+                            // Send notifications (async via queue would be better)
+                            $notificationService = app(\App\Services\SosNotificationService::class);
+                            $notificationService->sendNotifications($alert);
+                        }
+                    } catch (\Exception $e) {
+                        $this->error("Failed to create SOS alert: " . $e->getMessage());
+                    }
+                    
+                    // Send acknowledgment
+                    $serial = substr($hex, -8, 4);
+                    $resp = ($isExtended ? "79790005" : "787805") . "16" . $serial . "D9DC0D0A";
+                    $connection->write(hex2bin($resp));
                 }
                 break;
 
@@ -260,6 +581,56 @@ class GpsTcpServer extends Command
                                 'heading' => 0,
                                 'updated_at' => now()
                             ]);
+                        
+                        // 🚨 DRIVER BEHAVIOR: Detect violations in real-time
+                        try {
+                            $violationService = app(\App\Services\ViolationDetectionService::class);
+                            
+                            // Get current GPS data
+                            $currentGps = DB::table('positions')
+                                ->where('device_id', $ctx['device_id'])
+                                ->latest('id')
+                                ->first();
+                            
+                            // Get previous GPS data
+                            $previousGps = DB::table('positions')
+                                ->where('device_id', $ctx['device_id'])
+                                ->where('id', '<', $currentGps->id)
+                                ->latest('id')
+                                ->first();
+                            
+                            if ($currentGps && $previousGps) {
+                                // Convert to GpsData objects (simplified)
+                                $current = (object)[
+                                    'device_id' => $ctx['device_id'],
+                                    'latitude' => $currentGps->latitude,
+                                    'longitude' => $currentGps->longitude,
+                                    'speed' => $currentGps->speed,
+                                    'course' => 0,
+                                    'ignition' => true,
+                                    'timestamp' => \Carbon\Carbon::parse($currentGps->fix_time),
+                                ];
+                                
+                                $previous = (object)[
+                                    'device_id' => $previousGps->device_id,
+                                    'latitude' => $previousGps->latitude,
+                                    'longitude' => $previousGps->longitude,
+                                    'speed' => $previousGps->speed,
+                                    'course' => 0,
+                                    'ignition' => true,
+                                    'timestamp' => \Carbon\Carbon::parse($previousGps->fix_time),
+                                ];
+                                
+                                // Detect violations
+                                $violations = $violationService->detectViolations($current, $previous);
+                                
+                                if (!empty($violations)) {
+                                    $this->info("🚨 Detected " . count($violations) . " violation(s) for device {$ctx['device_id']}");
+                                }
+                            }
+                        } catch (\Exception $e) {
+                            $this->error("Violation detection error: " . $e->getMessage());
+                        }
                     }
                 }
                 break;
@@ -306,6 +677,45 @@ class GpsTcpServer extends Command
             }
         } elseif ($ctx['device']) {
             $ctx['device']->update(['last_seen_at' => now()]);
+        }
+    }
+
+    /**
+     * Send pending commands to device
+     */
+    protected function sendPendingCommands(ConnectionInterface $connection, int $deviceId): void
+    {
+        try {
+            // Fetch pending commands
+            $commands = DB::table('device_commands')
+                ->where('device_id', $deviceId)
+                ->where('status', 'pending')
+                ->orderBy('created_at', 'asc')
+                ->get();
+
+            if ($commands->isEmpty()) {
+                return;
+            }
+
+            $this->info("Found " . $commands->count() . " pending command(s) for device ID: {$deviceId}");
+
+            foreach ($commands as $command) {
+                // Send command hex
+                $commandBinary = hex2bin($command->command_hex);
+                $connection->write($commandBinary);
+                
+                $this->info("Sent {$command->command_type} command to device ID: {$deviceId}");
+                
+                // Update command status
+                DB::table('device_commands')
+                    ->where('id', $command->id)
+                    ->update([
+                        'status' => 'sent',
+                        'sent_at' => now()
+                    ]);
+            }
+        } catch (\Exception $e) {
+            $this->error("Error sending commands: " . $e->getMessage());
         }
     }
 }

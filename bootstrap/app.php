@@ -11,6 +11,11 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         channels: __DIR__.'/../routes/channels.php',
         health: '/up',
+        then: function () {
+            Route::middleware('api')
+                ->prefix('api/v2')
+                ->group(base_path('routes/api_v2.php'));
+        },
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(\App\Http\Middleware\IdentifyVendor::class);
@@ -19,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'auth.v2' => \App\Http\Middleware\AuthenticateV2Api::class,
         ]);
         
         // Exclude GPS endpoints from CSRF verification (devices don't have CSRF tokens)

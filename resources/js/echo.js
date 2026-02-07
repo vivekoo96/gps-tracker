@@ -1,3 +1,7 @@
+// Temporarily disabled due to npm installation issues
+// Uncomment after fixing npm and running: npm install
+
+/*
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 
@@ -12,3 +16,6 @@ window.Echo = new Echo({
     forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
     enabledTransports: ['ws', 'wss'],
 });
+*/
+
+console.log('Laravel Echo temporarily disabled - Fix npm and run: npm install');

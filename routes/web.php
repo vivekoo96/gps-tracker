@@ -75,6 +75,52 @@ Route::middleware('auth')->group(function () {
     // Real-time Server-Sent Events
     Route::get('/stream/gps', [RealTimeController::class, 'gpsStream'])->name('stream.gps');
     Route::get('/stream/dashboard', [RealTimeController::class, 'dashboardStream'])->name('stream.dashboard');
+    
+    // Driver Behavior Monitoring
+    Route::prefix('driver-behavior')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\DriverBehaviorController::class, 'index'])->name('admin.driver-behavior.index');
+        Route::get('/violations', [\App\Http\Controllers\Admin\DriverBehaviorController::class, 'violations'])->name('admin.driver-behavior.violations');
+        Route::get('/violations/{id}', [\App\Http\Controllers\Admin\DriverBehaviorController::class, 'violationDetails'])->name('admin.driver-behavior.violations.show');
+        Route::post('/violations/{id}/acknowledge', [\App\Http\Controllers\Admin\DriverBehaviorController::class, 'acknowledgeViolation'])->name('admin.driver-behavior.violations.acknowledge');
+        Route::get('/leaderboard', [\App\Http\Controllers\Admin\DriverBehaviorController::class, 'leaderboard'])->name('admin.driver-behavior.leaderboard');
+        Route::get('/drivers/{id}', [\App\Http\Controllers\Admin\DriverBehaviorController::class, 'driverProfile'])->name('admin.driver-behavior.driver-profile');
+        Route::get('/alerts', [\App\Http\Controllers\Admin\DriverBehaviorController::class, 'alerts'])->name('admin.driver-behavior.alerts');
+        Route::post('/alerts/{id}/read', [\App\Http\Controllers\Admin\DriverBehaviorController::class, 'markAlertRead'])->name('admin.driver-behavior.alerts.read');
+    });
+
+    // Fuel Management Routes
+    Route::get('/fuel', [\App\Http\Controllers\Admin\FuelManagementController::class, 'index'])->name('admin.fuel.index');
+    Route::get('/fuel/transactions', [\App\Http\Controllers\Admin\FuelManagementController::class, 'transactions'])->name('admin.fuel.transactions');
+    Route::get('/fuel/transactions/{transaction}', [\App\Http\Controllers\Admin\FuelManagementController::class, 'show'])->name('admin.fuel.transactions.show');
+    Route::post('/fuel/transactions/{transaction}/confirm', [\App\Http\Controllers\Admin\FuelManagementController::class, 'confirm'])->name('admin.fuel.transactions.confirm');
+    Route::get('/fuel/efficiency', [\App\Http\Controllers\Admin\FuelManagementController::class, 'efficiency'])->name('admin.fuel.efficiency');
+    Route::get('/fuel/alerts', [\App\Http\Controllers\Admin\FuelManagementController::class, 'alerts'])->name('admin.fuel.alerts');
+    Route::get('/fuel/analytics', [\App\Http\Controllers\Admin\FuelManagementController::class, 'analytics'])->name('admin.fuel.analytics');
+
+    // Maintenance Management Routes
+    Route::get('/maintenance', [\App\Http\Controllers\Admin\MaintenanceController::class, 'index'])->name('admin.maintenance.index');
+    Route::get('/maintenance/schedules', [\App\Http\Controllers\Admin\MaintenanceController::class, 'schedules'])->name('admin.maintenance.schedules');
+    Route::get('/maintenance/history', [\App\Http\Controllers\Admin\MaintenanceController::class, 'history'])->name('admin.maintenance.history');
+    Route::get('/maintenance/parts', [\App\Http\Controllers\Admin\MaintenanceController::class, 'parts'])->name('admin.maintenance.parts');
+    Route::get('/maintenance/reminders', [\App\Http\Controllers\Admin\MaintenanceController::class, 'reminders'])->name('admin.maintenance.reminders');
+    // Developer Portal Routes
+    Route::prefix('developer')->name('developer.')->group(function () {
+        Route::get('/portal', [\App\Http\Controllers\Developer\PortalController::class, 'index'])->name('portal.index');
+        Route::post('/portal/key', [\App\Http\Controllers\Developer\PortalController::class, 'generateKey'])->name('portal.generate-key');
+        Route::delete('/portal/key/{id}', [\App\Http\Controllers\Developer\PortalController::class, 'revokeKey'])->name('portal.revoke-key');
+        Route::post('/portal/webhook', [\App\Http\Controllers\Developer\PortalController::class, 'storeWebhook'])->name('portal.store-webhook');
+        Route::get('/portal/webhook/{id}/logs', [\App\Http\Controllers\Developer\PortalController::class, 'webhookLogs'])->name('portal.webhook-logs');
+        Route::get('/portal/docs', [\App\Http\Controllers\Developer\PortalController::class, 'documentation'])->name('portal.docs');
+        Route::get('/portal/sdk/download/{type}', [\App\Http\Controllers\Developer\PortalController::class, 'downloadSdk'])->name('portal.sdk-download');
+    });
+});
+
+// Admin Protocol Logs Routes (with admin prefix)
+Route::middleware('auth')->prefix('admin')->group(function () {
+    Route::get('/protocol-logs', [\App\Http\Controllers\Admin\ProtocolLogsController::class, 'index'])->name('admin.protocol-logs.index');
+    Route::get('/protocol-logs/{id}', [\App\Http\Controllers\Admin\ProtocolLogsController::class, 'show'])->name('admin.protocol-logs.show');
+    Route::delete('/protocol-logs/{id}', [\App\Http\Controllers\Admin\ProtocolLogsController::class, 'destroy'])->name('admin.protocol-logs.destroy');
+    Route::post('/protocol-logs/clear', [\App\Http\Controllers\Admin\ProtocolLogsController::class, 'clear'])->name('admin.protocol-logs.clear');
 });
 
 require __DIR__.'/auth.php';
@@ -97,16 +143,90 @@ Route::middleware(['auth', 'role:admin|super_admin|vendor_admin'])->prefix('admi
 
     // --- Fleet & GPS Management (Accessible by All Admins) ---
     Route::resource('devices', DeviceController::class);
+    
+    // Device Commands (Cut-off/Restore)
+    Route::post('devices/{device}/cut-off', [\App\Http\Controllers\Admin\DeviceCommandController::class, 'cutOff'])->name('devices.cut-off');
+    Route::post('devices/{device}/restore', [\App\Http\Controllers\Admin\DeviceCommandController::class, 'restore'])->name('devices.restore');
+    Route::get('devices/{device}/commands', [\App\Http\Controllers\Admin\DeviceCommandController::class, 'history'])->name('devices.commands');
+    
     Route::resource('geofences', GeofenceController::class);
     Route::get('geofences/{geofence}/events', [GeofenceController::class, 'events'])->name('geofences.events');
+    
+    // SOS Alerts
+    Route::get('sos-alerts', [\App\Http\Controllers\Admin\SosAlertController::class, 'index'])->name('sos-alerts.index');
+    Route::post('sos-alerts/{id}/acknowledge', [\App\Http\Controllers\Admin\SosAlertController::class, 'acknowledge'])->name('sos-alerts.acknowledge');
+    Route::post('sos-alerts/{id}/resolve', [\App\Http\Controllers\Admin\SosAlertController::class, 'resolve'])->name('sos-alerts.resolve');
+    Route::post('sos-alerts/{id}/false-alarm', [\App\Http\Controllers\Admin\SosAlertController::class, 'falseAlarm'])->name('sos-alerts.false-alarm');
+    Route::post('sos-alerts/{id}/resend', [\App\Http\Controllers\Admin\SosAlertController::class, 'resendNotifications'])->name('sos-alerts.resend');
+    
+    // Emergency Contacts
+    Route::get('devices/{device}/emergency-contacts', [\App\Http\Controllers\Admin\EmergencyContactController::class, 'index'])->name('devices.emergency-contacts.index');
+    Route::post('devices/{device}/emergency-contacts', [\App\Http\Controllers\Admin\EmergencyContactController::class, 'store'])->name('devices.emergency-contacts.store');
+    Route::put('devices/{device}/emergency-contacts/{contact}', [\App\Http\Controllers\Admin\EmergencyContactController::class, 'update'])->name('devices.emergency-contacts.update');
+    Route::delete('devices/{device}/emergency-contacts/{contact}', [\App\Http\Controllers\Admin\EmergencyContactController::class, 'destroy'])->name('devices.emergency-contacts.destroy');
+    
     Route::resource('tickets', \App\Http\Controllers\Admin\TicketController::class);
     
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('index');
-        Route::get('/daily-distance', [\App\Http\Controllers\Admin\ReportController::class, 'dailyDistance'])->name('daily-distance');
-        Route::get('/trips', [\App\Http\Controllers\Admin\ReportController::class, 'trips'])->name('trips');
-        Route::get('/geofences', [\App\Http\Controllers\Admin\ReportController::class, 'geofences'])->name('geofences');
-        Route::get('/engine-utilization', [\App\Http\Controllers\Admin\ReportController::class, 'engineUtilization'])->name('engine-utilization');
+        Route::get('/builder', [\App\Http\Controllers\Admin\ReportController::class, 'builder'])->name('builder');
+        Route::post('/generate', [\App\Http\Controllers\Admin\ReportController::class, 'generate'])->name('generate');
+        Route::post('/templates', [\App\Http\Controllers\Admin\ReportController::class, 'store'])->name('templates.store');
+        Route::delete('/templates/{id}', [\App\Http\Controllers\Admin\ReportController::class, 'destroy'])->name('templates.destroy');
+        Route::post('/templates/{id}/export', [\App\Http\Controllers\Admin\ReportController::class, 'export'])->name('export');
+        Route::get('/generated/{id}', [\App\Http\Controllers\Admin\ReportController::class, 'view'])->name('view');
+        Route::get('/generated/{id}/download', [\App\Http\Controllers\Admin\ReportController::class, 'download'])->name('download');
+        Route::get('/route-replay', [\App\Http\Controllers\Admin\RouteReplayController::class, 'index'])->name('route-replay');
+        Route::post('/route-replay/data', [\App\Http\Controllers\Admin\RouteReplayController::class, 'getRouteData'])->name('route-replay.data');
+    });
+    
+    // Current Status Dashboard
+    Route::prefix('status')->name('status.')->group(function () {
+        Route::get('/current', [\App\Http\Controllers\Admin\CurrentStatusController::class, 'index'])->name('current');
+        Route::post('/data', [\App\Http\Controllers\Admin\CurrentStatusController::class, 'getStatusData'])->name('data');
+    });
+    
+    // Live Vehicle View
+    Route::prefix('live-vehicle')->name('live-vehicle.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\LiveVehicleController::class, 'index'])->name('index');
+        Route::post('/info', [\App\Http\Controllers\Admin\LiveVehicleController::class, 'getVehicleInfo'])->name('info');
+        Route::post('/path', [\App\Http\Controllers\Admin\LiveVehicleController::class, 'getVehiclePath'])->name('path');
+    });
+    
+    // Fleet Dashboard
+    Route::prefix('fleet-dashboard')->name('fleet-dashboard.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\FleetDashboardController::class, 'index'])->name('index');
+        Route::post('/data', [\App\Http\Controllers\Admin\FleetDashboardController::class, 'getFleetData'])->name('data');
+        Route::get('/vehicle/{id}', [\App\Http\Controllers\Admin\FleetDashboardController::class, 'getVehicleLocation'])->name('vehicle');
+    });
+    
+    // User Management
+    Route::prefix('users')->name('users.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\UserManagementController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Admin\UserManagementController::class, 'store'])->name('store');
+        Route::get('/{id}', [\App\Http\Controllers\Admin\UserManagementController::class, 'show'])->name('show');
+        Route::put('/{id}', [\App\Http\Controllers\Admin\UserManagementController::class, 'update'])->name('update');
+        Route::delete('/{id}', [\App\Http\Controllers\Admin\UserManagementController::class, 'destroy'])->name('destroy');
+        Route::get('/vehicle-assignments/manage', [\App\Http\Controllers\Admin\UserManagementController::class, 'vehicleAssignments'])->name('vehicle-assignments');
+        Route::put('/vehicle-assignment/{id}', [\App\Http\Controllers\Admin\UserManagementController::class, 'updateVehicleAssignment'])->name('vehicle-assignment.update');
+    });
+    
+    // Ticket Management
+    Route::prefix('tickets')->name('tickets.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\TicketController::class, 'index'])->name('index');
+        Route::get('/analytics', [\App\Http\Controllers\Admin\TicketController::class, 'analytics'])->name('analytics');
+        Route::get('/{id}', [\App\Http\Controllers\Admin\TicketController::class, 'show'])->name('show');
+        Route::put('/{id}/status', [\App\Http\Controllers\Admin\TicketController::class, 'updateStatus'])->name('update-status');
+        Route::post('/{id}/comment', [\App\Http\Controllers\Admin\TicketController::class, 'addComment'])->name('add-comment');
+        Route::post('/{id}/close', [\App\Http\Controllers\Admin\TicketController::class, 'close'])->name('close');
+    });
+    
+    // Supervisor's Citizen Complaint View
+    Route::prefix('supervisor')->name('supervisor.')->group(function () {
+        Route::get('/citizen-complaints', [\App\Http\Controllers\Admin\SupervisorViewController::class, 'index'])->name('citizen-complaints');
+        Route::post('/search-location', [\App\Http\Controllers\Admin\SupervisorViewController::class, 'searchLocation'])->name('search-location');
+        Route::get('/collection-details/{id}', [\App\Http\Controllers\Admin\SupervisorViewController::class, 'getCollectionDetails'])->name('collection-details');
+        Route::get('/locations-by-area', [\App\Http\Controllers\Admin\SupervisorViewController::class, 'getLocationsByArea'])->name('locations-by-area');
     });
     
     Route::get('/ranking', [\App\Http\Controllers\Admin\RankingController::class, 'index'])->name('ranking.index');

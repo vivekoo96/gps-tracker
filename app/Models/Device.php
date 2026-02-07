@@ -26,7 +26,7 @@ class Device extends Model
 
     protected $fillable = [
         // General fields
-        'name', 'unit_type', 'device_type', 'vendor_id', 'server_address', 'unique_id', 
+        'name', 'unit_type', 'device_type', 'protocol_type', 'protocol_config', 'vendor_id', 'server_address', 'unique_id', 
         'phone_number', 'password', 'creator', 'account',
         
         // GPS tracking fields
@@ -47,6 +47,7 @@ class Device extends Model
     ];
 
     protected $casts = [
+        'protocol_config' => 'array',
         'last_seen_at' => 'datetime',
         'last_location_update' => 'datetime',
         'meta' => 'array',

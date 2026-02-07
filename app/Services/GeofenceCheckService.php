@@ -99,6 +99,17 @@ class GeofenceCheckService
         // Trigger alert if configured
         $this->triggerAlert($geofence, $device, $eventType, $event);
 
+        // Trigger webhook
+        app(\App\Services\WebhookService::class)->trigger("geofence.{$eventType}", [
+            'device_id' => $device->id,
+            'device_name' => $device->name,
+            'geofence_id' => $geofence->id,
+            'geofence_name' => $geofence->name,
+            'latitude' => $position->latitude,
+            'longitude' => $position->longitude,
+            'event_time' => $event->event_time,
+        ], $device->vendor_id);
+
         return $event;
     }
 

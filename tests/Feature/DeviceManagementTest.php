@@ -21,15 +21,18 @@ class DeviceManagementTest extends TestCase
 
         $response = $this->actingAs($admin)->post('/admin/devices', [
             'name' => 'Test Device',
-            'imei' => '123456789012345',
-            'model' => 'GT06',
+            'unique_id' => '123456789012345',
+            'unit_type' => 'Vehicle',
+            'device_category' => 'gps',
+            'device_model' => 'GT06',
+            'creator' => 'Test Admin',
             'status' => 'active'
         ]);
 
         $response->assertStatus(302); // Redirect or success
         $this->assertDatabaseHas('devices', [
             'name' => 'Test Device',
-            'imei' => '123456789012345'
+            'unique_id' => '123456789012345'
         ]);
     }
 
@@ -43,8 +46,11 @@ class DeviceManagementTest extends TestCase
 
         $response = $this->actingAs($admin)->post('/admin/devices', [
             'name' => 'Test Device',
-            'imei' => '123', // Invalid IMEI (too short)
-            'model' => 'GT06'
+            'unique_id' => '123', // Invalid IMEI (too short)
+            'unit_type' => 'Vehicle',
+            'device_category' => 'gps',
+            'device_model' => 'GT06',
+            'creator' => 'Test Admin'
         ]);
 
         // Check for either validation error or redirect
@@ -67,8 +73,10 @@ class DeviceManagementTest extends TestCase
 
         $response = $this->actingAs($admin)->put("/admin/devices/{$device->id}", [
             'name' => 'New Name',
-            'imei' => $device->imei,
-            'model' => $device->model,
+            'unique_id' => $device->unique_id,
+            'unit_type' => 'Vehicle',
+            'device_type' => $device->device_type ?? 'gps',
+            'creator' => 'Test Admin',
             'status' => 'active'
         ]);
 
@@ -91,7 +99,7 @@ class DeviceManagementTest extends TestCase
         $response = $this->actingAs($admin)->delete("/admin/devices/{$device->id}");
 
         $response->assertStatus(302);
-        $this->assertDatabaseMissing('devices', [
+        $this->assertSoftDeleted('devices', [
             'id' => $device->id
         ]);
     }
@@ -119,13 +127,16 @@ class DeviceManagementTest extends TestCase
         $this->withoutMiddleware();
         $admin = User::factory()->create();
         $existingDevice = Device::factory()->create([
-            'imei' => '123456789012345'
+            'unique_id' => '123456789012345'
         ]);
 
         $response = $this->actingAs($admin)->post('/admin/devices', [
             'name' => 'Duplicate Device',
-            'imei' => '123456789012345', // Same IMEI
-            'model' => 'GT06'
+            'unique_id' => '123456789012345', // Same unique_id
+            'unit_type' => 'Vehicle',
+            'device_category' => 'gps',
+            'device_model' => 'GT06',
+            'creator' => 'Test Admin'
         ]);
 
         // Check for validation error or redirect

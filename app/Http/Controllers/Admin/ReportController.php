@@ -3,174 +3,193 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Models\ReportTemplate;
+use App\Models\GeneratedReport;
 use App\Models\Device;
-use App\Models\Position;
-use Carbon\Carbon;
+use App\Services\ReportService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ReportController extends Controller
 {
+    protected $reportService;
+
+    public function __construct(ReportService $reportService)
+    {
+        $this->reportService = $reportService;
+    }
+
+    /**
+     * Display report templates list
+     */
     public function index()
     {
-        return view('admin.reports.index');
+        $templates = ReportTemplate::with(['creator', 'generatedReports'])
+            ->where('vendor_id', auth()->user()->vendor_id)
+            ->latest()
+            ->paginate(20);
+
+        $recentReports = GeneratedReport::with(['template', 'generator'])
+            ->whereHas('template', function($q) {
+                $q->where('vendor_id', auth()->user()->vendor_id);
+            })
+            ->latest('generated_at')
+            ->limit(10)
+            ->get();
+
+        return view('admin.reports.index', compact('templates', 'recentReports'));
     }
 
-    public function dailyDistance(Request $request)
+    /**
+     * Show report builder
+     */
+    public function builder(Request $request)
     {
-        $devices = Device::all();
-        $reportData = collect();
+        $reportTypes = $this->reportService->getAvailableReportTypes();
+        $devices = Device::where('vendor_id', auth()->user()->vendor_id)->get();
         
-        // If form submitted
-        if ($request->has('from_date') && $request->has('to_date')) {
-            $startDate = Carbon::parse($request->from_date)->startOfDay();
-            $endDate = Carbon::parse($request->to_date)->endOfDay();
-            $selectedDeviceIds = $request->device_ids ?? $devices->pluck('id')->toArray();
-
-            // Loop through each day in range
-            $period = \Carbon\CarbonPeriod::create($startDate, $endDate);
-
-            foreach ($selectedDeviceIds as $deviceId) {
-                foreach ($period as $date) {
-                    // Optimized: Fetch only lat/lon for specific device and day
-                    $positions = Position::where('device_id', $deviceId)
-                        ->whereBetween('fix_time', [$date->startOfDay(), $date->endOfDay()])
-                        ->orderBy('fix_time', 'asc')
-                        ->select('latitude', 'longitude')
-                        ->get();
-
-                    $totalDistance = 0;
-                    if ($positions->count() > 1) {
-                        for ($i = 0; $i < $positions->count() - 1; $i++) {
-                            $totalDistance += $this->calculateDistance(
-                                $positions[$i]->latitude, $positions[$i]->longitude,
-                                $positions[$i+1]->latitude, $positions[$i+1]->longitude
-                            );
-                        }
-                    }
-
-                    if ($totalDistance > 0 || $request->show_zeros) {
-                         $device = $devices->find($deviceId);
-                         $reportData->push([
-                             'date' => $date->format('Y-m-d'),
-                             'device_name' => $device->name,
-                             'vehicle_no' => $device->vehicle_no,
-                             'distance_km' => round($totalDistance, 2)
-                         ]);
-                    }
-                }
-            }
-        }
-
-        return view('admin.reports.daily_distance', compact('devices', 'reportData'));
+        $selectedType = $request->get('type', 'trip');
+        
+        return view('admin.reports.builder', compact('reportTypes', 'devices', 'selectedType'));
     }
 
-    public function trips(Request $request) 
+    /**
+     * Generate report (AJAX or Export)
+     */
+    public function generate(Request $request)
     {
-        $devices = Device::all();
-        $trips = collect();
+        $validated = $request->validate([
+            'type' => 'required|string',
+            'name' => 'required|string|max:100',
+            'date_from' => 'required|date',
+            'date_to' => 'required|date|after_or_equal:date_from',
+            'devices' => 'nullable|array',
+            'devices.*' => 'exists:devices,id',
+            'filters' => 'nullable|array',
+            'format' => 'nullable|in:csv,excel,xlsx,pdf',
+        ]);
 
-        if ($request->has('from_date') && $request->has('to_date') && $request->has('device_id')) {
-            $startDate = Carbon::parse($request->from_date);
-            $endDate = Carbon::parse($request->to_date);
-            $device = Device::find($request->device_id);
+        // Create temporary template
+        $template = new ReportTemplate([
+            'name' => $validated['name'],
+            'type' => $validated['type'],
+            'filters' => array_merge($validated['filters'] ?? [], [
+                'date_from' => $validated['date_from'],
+                'date_to' => $validated['date_to'],
+                'devices' => $validated['devices'] ?? [],
+            ]),
+        ]);
+        $template->id = 0; // Temporary
 
-            $positions = Position::where('device_id', $device->id)
-                ->whereBetween('fix_time', [$startDate, $endDate])
-                ->orderBy('fix_time', 'asc')
-                ->get();
+        try {
+            $reportData = $this->reportService->generateReport($template);
 
-            // Simple Trip Logic: Ignition ON -> OFF
-            $currentTrip = null;
-            
-            foreach ($positions as $pos) {
-                $ignition = $pos->ignition; // Assuming boolean or 1/0
-
-                // Trip Start (Ignition turned ON)
-                if ($ignition && !$currentTrip) {
-                    $currentTrip = [
-                        'start_time' => $pos->fix_time,
-                        'start_lat' => $pos->latitude,
-                        'start_lon' => $pos->longitude,
-                        'distance' => 0,
-                        'positions' => [$pos]
-                    ];
-                }
+            // If format is specified, export and download
+            if ($request->has('format')) {
+                $result = $this->reportService->exportReport($reportData, $validated['format'], $template);
+                $filePath = storage_path("app/public/{$result['path']}");
                 
-                // Trip Continue
-                if ($ignition && $currentTrip) {
-                    $lastPos = end($currentTrip['positions']);
-                    $currentTrip['distance'] += $this->calculateDistance(
-                        $lastPos->latitude, $lastPos->longitude,
-                        $pos->latitude, $pos->longitude
-                    );
-                    $currentTrip['positions'][] = $pos;
-                }
-
-                // Trip End (Ignition turned OFF)
-                if (!$ignition && $currentTrip) {
-                    $currentTrip['end_time'] = $pos->fix_time;
-                    $currentTrip['end_lat'] = $pos->latitude;
-                    $currentTrip['end_lon'] = $pos->longitude;
-                    $currentTrip['duration'] = Carbon::parse($currentTrip['start_time'])->diffForHumans($pos->fix_time, true);
-                    
-                    $trips->push($currentTrip);
-                    $currentTrip = null;
-                }
+                return response()->download($filePath)->deleteFileAfterSend(false);
             }
+
+            // Otherwise return JSON for preview
+            return response()->json([
+                'success' => true,
+                'data' => $reportData['data'],
+                'columns' => $reportData['columns'],
+                'record_count' => $reportData['record_count'],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error generating report: ' . $e->getMessage(),
+            ], 500);
         }
-
-        return view('admin.reports.trips', compact('devices', 'trips'));
     }
 
-    private function calculateDistance($lat1, $lon1, $lat2, $lon2) {
-        $earthRadius = 6371; // km
-        $dLat = deg2rad($lat2 - $lat1);
-        $dLon = deg2rad($lon2 - $lon1);
-        $a = sin($dLat / 2) * sin($dLat / 2) +
-             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
-             sin($dLon / 2) * sin($dLon / 2);
-        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-        $distance = $earthRadius * $c;
-        return $distance;
-    }
-
-    public function geofences(Request $request) 
+    /**
+     * Save report template
+     */
+    public function store(Request $request)
     {
-        $devices = Device::all();
-        $geofences = \App\Models\Geofence::all();
-        $events = collect();
+        $validated = $request->validate([
+            'name' => 'required|string|max:100',
+            'type' => 'required|string',
+            'description' => 'nullable|string',
+            'filters' => 'required|array',
+            'columns' => 'nullable|array',
+            'schedule' => 'nullable|string|in:daily,weekly,monthly,none',
+            'recipients' => 'nullable|array',
+            'recipients.*' => 'email',
+        ]);
 
-        if ($request->has('from_date') && $request->has('to_date')) {
-            $startDate = Carbon::parse($request->from_date);
-            $endDate = Carbon::parse($request->to_date);
+        $template = $this->reportService->saveTemplate($validated);
+
+        return redirect()->route('admin.reports.index')
+            ->with('success', 'Report template saved successfully!');
+    }
+
+    /**
+     * Export report from template
+     */
+    public function export(Request $request, $templateId)
+    {
+        $template = ReportTemplate::findOrFail($templateId);
+        
+        $validated = $request->validate([
+            'format' => 'required|in:csv,excel,xlsx,pdf',
+            'filters' => 'nullable|array',
+        ]);
+
+        try {
+            $reportData = $this->reportService->generateReport($template, $validated['filters'] ?? []);
+            $result = $this->reportService->exportReport($reportData, $validated['format'], $template);
             
-            $query = \Illuminate\Support\Facades\DB::table('geofence_events')
-                ->join('devices', 'geofence_events.device_id', '=', 'devices.id')
-                ->join('geofences', 'geofence_events.geofence_id', '=', 'geofences.id')
-                ->whereBetween('event_time', [$startDate, $endDate])
-                ->select(
-                    'geofence_events.*', 
-                    'devices.name as device_name', 'devices.vehicle_no',
-                    'geofences.name as geofence_name'
-                )
-                ->orderBy('event_time', 'desc');
+            $filePath = storage_path("app/public/{$result['path']}");
+            return response()->download($filePath);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error exporting report: ' . $e->getMessage());
+        }
+    }
 
-            if ($request->device_id) {
-                $query->where('geofence_events.device_id', $request->device_id);
-            }
-
-            if ($request->geofence_id) {
-                $query->where('geofence_events.geofence_id', $request->geofence_id);
-            }
-
-            $events = $query->get();
+    /**
+     * Download generated report
+     */
+    public function download($reportId)
+    {
+        $report = GeneratedReport::findOrFail($reportId);
+        
+        $filePath = storage_path("app/public/{$report->file_path}");
+        
+        if (!file_exists($filePath)) {
+            return back()->with('error', 'Report file not found.');
         }
 
-        return view('admin.reports.geofences', compact('devices', 'geofences', 'events'));
+        return response()->download($filePath);
     }
-    public function engineUtilization(Request $request)
+
+    /**
+     * Delete template
+     */
+    public function destroy($id)
     {
-        $devices = Device::all();
-        return view('admin.reports.engine_utilization', compact('devices'));
+        try {
+            $this->reportService->deleteTemplate($id);
+            
+            return redirect()->route('admin.reports.index')
+                ->with('success', 'Report template deleted successfully!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error deleting template: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * View generated report
+     */
+    public function view($reportId)
+    {
+        $report = GeneratedReport::with('template')->findOrFail($reportId);
+        
+        return view('admin.reports.view', compact('report'));
     }
 }

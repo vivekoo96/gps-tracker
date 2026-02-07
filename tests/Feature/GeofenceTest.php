@@ -234,7 +234,7 @@ class GeofenceTest extends TestCase
         $response = $this->actingAs($admin)->delete("/admin/geofences/{$geofence->id}");
 
         $response->assertStatus(302);
-        $this->assertDatabaseMissing('geofences', [
+        $this->assertSoftDeleted('geofences', [
             'id' => $geofence->id
         ]);
     }
