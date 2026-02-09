@@ -186,10 +186,14 @@ class GpsServerCommand extends Command
 
     private function saveGpsData($data)
     {
-        // Find device by IMEI/ID
-        $device = Device::where('unique_id', $data['device_id'])
-                       ->orWhere('imei', $data['device_id'])
-                       ->first();
+        // Disable query log to prevent memory exhaustion in long-running process
+        \Illuminate\Support\Facades\DB::disableQueryLog();
+
+        // Find device by IMEI/ID - properly grouped orWhere
+        $device = Device::where(function($query) use ($data) {
+            $query->where('unique_id', $data['device_id'])
+                  ->orWhere('imei', $data['device_id']);
+        })->first();
         
         if (!$device) {
             $this->warn("Device not found: " . $data['device_id']);

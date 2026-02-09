@@ -13,6 +13,18 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasRoles;
 
+    protected static function booted()
+    {
+        static::addGlobalScope(new \App\Models\Scopes\VendorScope);
+        
+        static::creating(function ($model) {
+            // Automatically assign the creator's vendor_id to the new user
+            if (auth()->check() && auth()->user()->vendor_id && !isset($model->vendor_id)) {
+                $model->vendor_id = auth()->user()->vendor_id;
+            }
+        });
+    }
+
     /**
      * The attributes that are mass assignable.
      *

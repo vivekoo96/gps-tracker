@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Contracts\GpsProtocolParser;
 use App\Services\Protocols\GT06Parser;
 use App\Services\Protocols\TK103Parser;
+use App\Services\Protocols\TeltonikaParser;
+use App\Services\Protocols\QueclinkParser;
 use App\Services\Protocols\TextParser;
 use Illuminate\Support\Facades\Log;
 
@@ -18,6 +20,8 @@ class ProtocolDetector
         // Register parsers in order of priority
         $this->parsers = [
             GT06Parser::class,
+            TeltonikaParser::class,
+            QueclinkParser::class,
             TK103Parser::class,
             TextParser::class, // Fallback
         ];
@@ -50,6 +54,8 @@ class ProtocolDetector
         $parserMap = [
             'auto' => null, // Will use detect()
             'gt06' => GT06Parser::class,
+            'teltonika' => TeltonikaParser::class,
+            'queclink' => QueclinkParser::class,
             'tk103' => TK103Parser::class,
             'text' => TextParser::class,
         ];
@@ -85,7 +91,9 @@ class ProtocolDetector
     {
         return [
             'auto' => 'Auto-detect',
-            'gt06' => 'GT06 / Queclink',
+            'gt06' => 'GT06 / Concox',
+            'teltonika' => 'Teltonika (Codec 8/16)',
+            'queclink' => 'Queclink GV Series',
             'tk103' => 'TK103 / Xexun',
             'text' => 'Text-based (Generic)',
         ];

@@ -1,0 +1,609 @@
+{
+    "info": {
+        "_postman_id": "8b51d6c3-1f1e-4c7b-9e4a-5f9a6e3d2c1b",
+        "name": "GPS Tracker API V2",
+        "description": "API collection for the GPS Tracker System V2. Includes authenticated login, multi-tenant devices, landmarks, routes, and sub-user management.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Authentication & System",
+            "item": [
+                {
+                    "name": "Login",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "if (jsonData.status === 'success') {",
+                                    "    pm.collectionVariables.set(\"apiKey\", jsonData.data.api_credentials.key);",
+                                    "    pm.collectionVariables.set(\"apiSecret\", jsonData.data.api_credentials.secret);",
+                                    "    console.log('API Credentials updated automatically!');",
+                                    "}"
+                                ],
+                                "type": "text/javascript",
+                                "packages": {}
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"admin@example.com\",\n    \"password\": \"password\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v2/login",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v2",
+                                "login"
+                            ]
+                        },
+                        "description": "Logs in with email/password and automatically updates the collection's apiKey and apiSecret variables."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Check Identity (Auth Test)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{apiKey}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-API-Secret",
+                                "value": "{{apiSecret}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v2/me",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v2",
+                                "me"
+                            ]
+                        },
+                        "description": "Tests the API credentials and returns the authenticated user info."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "User Management (Admin Only)",
+            "item": [
+                {
+                    "name": "List Users",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{apiKey}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-API-Secret",
+                                "value": "{{apiSecret}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v2/users",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v2",
+                                "users"
+                            ]
+                        },
+                        "description": "Returns a list of all users within your tenant."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Show User",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{apiKey}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-API-Secret",
+                                "value": "{{apiSecret}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v2/users/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v2",
+                                "users",
+                                "1"
+                            ]
+                        },
+                        "description": "Returns details for a specific user within your tenant."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Sub-User",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{apiKey}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-API-Secret",
+                                "value": "{{apiSecret}}",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\",\n    \"role\": \"user\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v2/users",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v2",
+                                "users"
+                            ]
+                        },
+                        "description": "Creates a new user under your tenant and returns their API credentials."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Devices",
+            "item": [
+                {
+                    "name": "List Devices",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{apiKey}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-API-Secret",
+                                "value": "{{apiSecret}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v2/devices?status=active&per_page=50",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v2",
+                                "devices"
+                            ],
+                            "query": [
+                                {
+                                    "key": "status",
+                                    "value": "active"
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "50"
+                                }
+                            ]
+                        },
+                        "description": "Returns a list of devices (automatically filtered by your tenant)."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Show Device",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{apiKey}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-API-Secret",
+                                "value": "{{apiSecret}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v2/devices/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v2",
+                                "devices",
+                                "1"
+                            ]
+                        },
+                        "description": "Returns details for a specific device."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "GPS Telemetry",
+            "item": [
+                {
+                    "name": "Latest Locations (All)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{apiKey}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-API-Secret",
+                                "value": "{{apiSecret}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v2/gps-data/latest",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v2",
+                                "gps-data",
+                                "latest"
+                            ]
+                        },
+                        "description": "Returns the latest location for all devices in your tenant."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Device History",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{apiKey}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-API-Secret",
+                                "value": "{{apiSecret}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v2/gps-data/1/history?from=2024-01-01&to=2024-12-31",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v2",
+                                "gps-data",
+                                "1",
+                                "history"
+                            ],
+                            "query": [
+                                {
+                                    "key": "from",
+                                    "value": "2024-01-01"
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "2024-12-31"
+                                }
+                            ]
+                        },
+                        "description": "Returns paginated movement history for a specific device."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Live Data Stream (SSE)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{apiKey}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-API-Secret",
+                                "value": "{{apiSecret}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v2/gps-data/stream",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v2",
+                                "gps-data",
+                                "stream"
+                            ]
+                        },
+                        "description": "Opens an authenticated Server-Sent Events (SSE) stream for real-time GPS updates. Note: Postman's 'Send' button might not handle SSE streams indefinitely; testing in a browser or dedicated client is recommended."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Landmarks & Routes",
+            "item": [
+                {
+                    "name": "List Landmarks",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{apiKey}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-API-Secret",
+                                "value": "{{apiSecret}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v2/landmarks",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v2",
+                                "landmarks"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Show Landmark",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{apiKey}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-API-Secret",
+                                "value": "{{apiSecret}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v2/landmarks/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v2",
+                                "landmarks",
+                                "1"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "List Routes",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{apiKey}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-API-Secret",
+                                "value": "{{apiSecret}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v2/routes",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v2",
+                                "routes"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Show Route",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{apiKey}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-API-Secret",
+                                "value": "{{apiSecret}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v2/routes/1",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v2",
+                                "routes",
+                                "1"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Alerts",
+            "item": [
+                {
+                    "name": "List Alerts",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{apiKey}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-API-Secret",
+                                "value": "{{apiSecret}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v2/alerts?is_read=false",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v2",
+                                "alerts"
+                            ],
+                            "query": [
+                                {
+                                    "key": "is_read",
+                                    "value": "false"
+                                }
+                            ]
+                        },
+                        "description": "Returns a list of alerts for your tenant's devices."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Acknowledge Alert",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{apiKey}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-API-Secret",
+                                "value": "{{apiSecret}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v2/alerts/1/acknowledge",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v2",
+                                "alerts",
+                                "1",
+                                "acknowledge"
+                            ]
+                        },
+                        "description": "Marks a specific alert as read/acknowledged."
+                    },
+                    "response": []
+                }
+            ]
+        }
+    ],
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://gps.test",
+            "type": "string"
+        },
+        {
+            "key": "apiKey",
+            "value": "SET_AFTER_LOGIN",
+            "type": "string"
+        },
+        {
+            "key": "apiSecret",
+            "value": "SET_AFTER_LOGIN",
+            "type": "string"
+        }
+    ]
+}

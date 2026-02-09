@@ -24,29 +24,29 @@ class DashboardController extends Controller
             return redirect()->route('super_admin.dashboard');
         }
         
-        // Get user's devices (if user has specific devices assigned)
-        // For now, we'll show all devices for simplicity, but you can filter by user later
-        $userDevices = Device::all(); // You might want to filter by user relationship
+        // GPS Tracking Statistics - Use database queries with actual columns
+        $totalDevices = Device::count();
         
-        // Get devices with location data for map
+        // is_online is an accessor, not a column. Use the actual logic from the accessor
+        $onlineDevices = Device::where('status', 'active')
+            ->where('last_location_update', '>', now()->subHours(24))
+            ->count();
+            
+        $offlineDevices = $totalDevices - $onlineDevices;
+        $movingDevices = Device::where('is_moving', true)->count();
+        $lowBatteryDevices = Device::whereNotNull('battery_level')
+            ->where('battery_level', '<', 20)
+            ->count();
+        
+        // Get devices with location data for map (paginated)
         $devicesWithLocation = Device::whereNotNull('latitude')
             ->whereNotNull('longitude')
-            ->get(['id', 'name', 'unique_id', 'latitude', 'longitude', 'speed', 'is_moving', 'last_location_update']);
-        
-        // GPS Tracking Statistics
-        $totalDevices = $userDevices->count();
-        $onlineDevices = $userDevices->filter(fn($device) => $device->is_online)->count();
-        $offlineDevices = $totalDevices - $onlineDevices;
-        $movingDevices = $userDevices->filter(fn($device) => $device->is_moving)->count();
-        
-        // Device status breakdown
-        $lowBatteryDevices = $userDevices->filter(fn($device) => 
-            isset($device->battery_level) && $device->battery_level < 20
-        )->count();
+            ->select(['id', 'name', 'unique_id', 'latitude', 'longitude', 'speed', 'is_moving', 'last_location_update'])
+            ->limit(100)
+            ->get();
         
         // Recent activity - positions and device status changes
         $recentPositions = Position::with('device')
-            ->whereIn('device_id', $userDevices->pluck('id'))
             ->latest('fix_time')
             ->take(10)
             ->get();
@@ -65,9 +65,34 @@ class DashboardController extends Controller
             ]);
         }
         
-        // Add device status changes
-        foreach ($userDevices->take(3) as $device) {
-            if ($device->is_online) {
+        // Add recent device status updates (only fetch a small sample)
+        // Use actual database columns, not accessors
+        // Fetch recently online devices
+        $recentOnlineDevices = Device::where('status', 'active')
+            ->where('last_location_update', '>', now()->subHours(24))
+            ->select(['id', 'name', 'status', 'battery_level', 'last_location_update', 'updated_at'])
+            ->orderBy('last_location_update', 'desc')
+            ->limit(3)
+            ->get();
+        
+        // Fetch low battery devices separately
+        $lowBatteryDevicesRecent = Device::where('battery_level', '<', 20)
+            ->whereNotNull('battery_level')
+            ->select(['id', 'name', 'status', 'battery_level', 'last_location_update', 'updated_at'])
+            ->orderBy('updated_at', 'desc')
+            ->limit(3)
+            ->get();
+        
+        // Merge and process both collections
+        $recentDevices = $recentOnlineDevices->merge($lowBatteryDevicesRecent)->unique('id');
+        
+        foreach ($recentDevices as $device) {
+            // Check if device is online using the same logic as the accessor
+            $isOnline = $device->status === 'active' && 
+                       $device->last_location_update && 
+                       $device->last_location_update->gt(now()->subHours(24));
+                       
+            if ($isOnline) {
                 $recentActivity->push([
                     'type' => 'device_online',
                     'message' => "Device {$device->name} came online",
@@ -115,7 +140,7 @@ class DashboardController extends Controller
             : 0;
         
         // Active alerts (devices with issues)
-        $criticalAlerts = $userDevices->filter(fn($device) => !$device->is_online)->count();
+        $criticalAlerts = $offlineDevices;
         $warningAlerts = $lowBatteryDevices;
         $totalAlerts = $criticalAlerts + $warningAlerts;
         

@@ -140,6 +140,10 @@ class GpsTcpServer extends Command
             // For GT06, we need to extract complete packets
             if ($protocolName === 'gt06') {
                 $this->processGT06Buffer($connection, $ctx, $parser);
+            } elseif ($protocolName === 'teltonika') {
+                $this->processTeltonikaBuffer($connection, $ctx, $parser);
+            } elseif ($protocolName === 'queclink') {
+                $this->processQueclinkBuffer($connection, $ctx, $parser);
             } elseif ($protocolName === 'tk103') {
                 $this->processTK103Buffer($connection, $ctx, $parser);
             } else {
@@ -149,6 +153,61 @@ class GpsTcpServer extends Command
         } catch (\Exception $e) {
             Log::error("Protocol processing error: " . $e->getMessage());
             $ctx['buffer'] = ''; // Clear buffer on error
+        }
+    }
+
+    protected function processTeltonikaBuffer(ConnectionInterface $connection, array &$ctx, $parser): void
+    {
+        $buffer = $ctx['buffer'];
+        $len = strlen($buffer);
+        $hex = bin2hex($buffer);
+
+        // Teltonika preamble is 4 bytes of zero
+        if (str_starts_with($hex, '00000000')) {
+            if ($len < 8) return;
+            
+            $dataLength = hexdec(substr($hex, 8, 8));
+            $totalExpectedBytes = 4 + 4 + $dataLength + 4; // Preamble + Len + Data + CRC
+
+            if ($len >= $totalExpectedBytes) {
+                $packet = substr($buffer, 0, $totalExpectedBytes);
+                $this->processPacketWithParser($connection, $ctx, $packet, $parser);
+                $ctx['buffer'] = substr($buffer, $totalExpectedBytes);
+                
+                if (strlen($ctx['buffer']) > 0) {
+                    $this->processBuffer($connection, $ctx);
+                }
+            }
+            return;
+        }
+
+        // Handle case where it's a direct IMEI login (not prefixed with preamble)
+        // Teltonika IMEI is usually 15-17 bytes
+        if ($len >= 15 && $len <= 20 && !str_contains($buffer, "\n")) {
+             $packet = $buffer;
+             $this->processPacketWithParser($connection, $ctx, $packet, $parser);
+             $ctx['buffer'] = '';
+        }
+    }
+
+    protected function processQueclinkBuffer(ConnectionInterface $connection, array &$ctx, $parser): void
+    {
+        $buffer = $ctx['buffer'];
+        
+        // Queclink messages end with $ or sometimes newline
+        $pos = strpos($buffer, '$');
+        if ($pos === false) {
+            $pos = strpos($buffer, "\n");
+        }
+
+        if ($pos !== false) {
+            $packet = substr($buffer, 0, $pos + 1);
+            $this->processPacketWithParser($connection, $ctx, $packet, $parser);
+            $ctx['buffer'] = substr($buffer, $pos + 1);
+            
+            if (strlen($ctx['buffer']) > 0) {
+                $this->processBuffer($connection, $ctx);
+            }
         }
     }
 
@@ -301,8 +360,13 @@ class GpsTcpServer extends Command
     {
         if (!isset($ctx['device_id'])) return;
         
-        // Save GPS data
-        $this->saveGpsData($ctx['device_id'], $parsedData);
+        // Check if there are multiple records (e.g. Teltonika)
+        $records = $parsedData['records'] ?? [$parsedData];
+
+        foreach ($records as $record) {
+            // Save GPS data
+            $this->saveGpsData($ctx['device_id'], $record);
+        }
         
         // Send response
         $response = $parser->buildLocationResponse();

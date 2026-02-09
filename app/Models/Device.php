@@ -72,8 +72,10 @@ class Device extends Model
 
     public function scopeOffline($query)
     {
-        return $query->where('status', 'inactive')
-                    ->orWhere('last_location_update', '<', now()->subMinutes(10));
+        return $query->where(function($q) {
+            $q->where('status', 'inactive')
+              ->orWhere('last_location_update', '<', now()->subMinutes(10));
+        });
     }
 
     public function scopeMoving($query)
@@ -137,17 +139,17 @@ class Device extends Model
         return $this->hasMany(Ticket::class);
     }
 
-    public function latestPosition()
+    public function latest_position()
     {
         return $this->hasOne(Position::class)->latestOfMany('fix_time');
     }
 
-    // Accessors
-    public function getLastLocationAttribute()
+    public function latestPosition()
     {
-        return $this->latestPosition;
+        return $this->latest_position();
     }
 
+    // Accessors
     public function getIsOnlineAttribute()
     {
         return $this->status === 'active' && 

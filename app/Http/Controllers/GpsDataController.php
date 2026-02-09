@@ -356,10 +356,11 @@ class GpsDataController extends Controller
         $device = Device::where('unique_id', $deviceId)->first();
         
         if (!$device) {
-            // Try to find by IMEI or other identifiers
-            $device = Device::where('imei', $deviceId)
-                          ->orWhere('phone_number', $deviceId)
-                          ->first();
+            // Try to find by IMEI or other identifiers - properly grouped orWhere
+            $device = Device::where(function($query) use ($deviceId) {
+                $query->where('imei', $deviceId)
+                      ->orWhere('phone_number', $deviceId);
+            })->first();
         }
 
         if (!$device) {
